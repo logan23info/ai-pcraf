@@ -899,9 +899,7 @@ Respond ONLY with a valid JSON object. No preamble, no explanation, no markdown 
       parsed = JSON.parse(clean);
     } catch(parseErr) {
       // Show raw output if JSON parse fails — auditor can still read it
-      document.getElementById('cm-output').textContent = '[JSON parse error — raw output below]
-
-' + raw;
+      document.getElementById('cm-output').textContent = '[JSON parse error — raw output below]\n\n' + raw;
       document.getElementById('cm-output').classList.add('visible');
       document.getElementById('cm-spinner').classList.remove('visible');
       return;
@@ -950,15 +948,12 @@ Respond ONLY with a valid JSON object. No preamble, no explanation, no markdown 
       ``,
       `FIELDWORK PACK (IIA 2310)`,
       `${'─'.repeat(50)}`,
-      `Test steps:
-${parsed.fieldwork_test_steps}`,
+      'Test steps:\n' + parsed.fieldwork_test_steps,
       ``,
       `Sample size:       ${parsed.sample_size}`,
       ``,
-      `Evidence request list:
-${parsed.evidence_request_list}`
-    ].join('
-');
+      'Evidence request list:\n' + parsed.evidence_request_list
+    ].join('\n');
 
     document.getElementById('cm-output').textContent = displayText;
     document.getElementById('cm-output').classList.add('visible');
