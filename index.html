@@ -836,80 +836,151 @@ async function generateControl() {
   document.getElementById('cm-spinner').classList.add('visible');
   document.getElementById('cm-output').classList.remove('visible');
 
-  const entityCtx = entity.name ? `Target entity: ${entity.name} (${entity.type||tier}). CBS: ${entity.cbs||'unknown'}.` : `Target tier: ${tier}.`;
+  const entityCtx = entity.name
+    ? `Target entity: ${entity.name} (${entity.type||tier}). CBS: ${entity.cbs||'unknown'}.`
+    : `Target tier: ${tier}.`;
 
+  // D1+D2 FIX: JSON-mode prompt — deterministic schema, no text variation
   const prompt = `You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v1.0 for Indian BFSI IT Audit.
-
 ${entityCtx}
-Generate a complete CONTROL_OBJECT in the following structured format:
+Control focus: ${focus}
+Assurance domain: ${domain}
+Control domain: ${ctrlDomain}
+Subsystem: ${subsystem||'(derive from control focus)'}
+Entity tier: ${tier}
+Control ID: ${controlId}
 
-CONTROL_OBJECT {
-  control_id: ${controlId}
-  control_name: [concise name]
-  version: 1.0
-  assurance_domain: ${domain}
-  subsystem: ${subsystem||'[specify]'}
-  tier_applicability: [list applicable tiers]
+Respond ONLY with a valid JSON object. No preamble, no explanation, no markdown fences. The JSON must have exactly these fields:
 
-  primary_codex_ref: [exact RBI/CERT-In/DPDP/NCIIPC reference with section number]
-  secondary_codex_ref: [additional citations]
-  source_truth_status: [VERIFIED-TRAINING | INFERRED | UNVERIFIED]
-
-  risk_description: [clear risk statement]
-  risk_rating: [Critical | High | Medium | Low]
-  inherent_risk: [before controls]
-  residual_risk: [after controls]
-
-  control_type: [Preventive | Detective | Corrective]
-  control_mode: [Automated | Manual | Hybrid]
-  ai_testing_procedure: [what the AI engine tests continuously]
-  manual_procedure: [what the human auditor does periodically]
-  testing_frequency: [Continuous | Monthly | Quarterly | Annual]
-
-  evidence_artifacts: [list: artifact name | format | retention | immutability]
-
-  drift_indicator: [what signals configuration drift]
-  drift_threshold: [what triggers an alert]
-
-  reportable_to: [RBI_DAKSH | CERT-In | NCIIPC | DPDP_Board — list applicable]
-  reporting_sla: [e.g. 6 hours from detection]
-
-  fabrication_flag: [tag every citation with VT/I/U]
-  blind_spot_flag: [true/false]
-  blind_spot_note: [if flagged, which BS-ID and why]
-}
-
-CoT Reasoning:
-Step 1 — Trigger: [what triggers this control]
-Step 2 — Codex: [specific regulation and section]
-Step 3 — Tier calibration: [how it differs across tiers]
-Step 4 — Control design: [precise control design]
-Step 5 — Evidence: [exact artifact specification]
-Step 6 — Failure mode: [what drift/failure looks like]
-
-Control focus: ${focus}`;
+{
+  "control_id": "${controlId}",
+  "control_name": "concise name",
+  "assurance_domain": "${domain}",
+  "subsystem": "specific subsystem name",
+  "tier_applicability": ["tier1","tier2"],
+  "primary_codex_ref": "RBI IT Gov MD 2023, Section X.X — exact title",
+  "secondary_codex_ref": "additional citation",
+  "source_truth_status": "VERIFIED-TRAINING",
+  "risk_description": "clear risk statement",
+  "risk_rating": "Critical|High|Medium|Low",
+  "inherent_risk": "risk before controls",
+  "residual_risk": "risk after controls",
+  "control_type": "Preventive|Detective|Corrective",
+  "control_mode": "Automated|Manual|Hybrid",
+  "ai_testing_procedure": "what the AI engine tests continuously",
+  "manual_procedure": "what the human auditor does periodically",
+  "testing_frequency": "Continuous|Monthly|Quarterly|Annual",
+  "evidence_artifacts": "artifact name | format | retention period | immutable:yes/no",
+  "drift_indicator": "what signals configuration drift",
+  "drift_threshold": "what triggers an alert",
+  "reportable_to": ["RBI_DAKSH","CERT-In"],
+  "reporting_sla": "6 hours from detection",
+  "fabrication_flag": "VT",
+  "blind_spot_flag": false,
+  "blind_spot_note": "",
+  "cot_trigger": "Step 1 — what regulatory event triggers this",
+  "cot_codex": "Step 2 — specific regulation and section number",
+  "cot_tier": "Step 3 — how obligation differs across tiers",
+  "cot_design": "Step 4 — precise control design, AI vs human split",
+  "cot_evidence": "Step 5 — exact artifact: file type, retention, immutability",
+  "cot_failure": "Step 6 — what drift or failure looks like, escalation path",
+  "fieldwork_test_steps": "1. Step one\n2. Step two\n3. Step three",
+  "sample_size": "e.g. 25 transactions / all privileged accounts / last 90 days",
+  "evidence_request_list": "1. Document one\n2. Document two\n3. Document three"
+}`;
 
   try {
-    const result = await callClaude(prompt, 1000);
-    document.getElementById('cm-output').textContent = result;
+    const raw = await callClaude(prompt, 1200);
+
+    // Deterministic JSON parser — strip any accidental fences
+    let parsed;
+    try {
+      const clean = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+      parsed = JSON.parse(clean);
+    } catch(parseErr) {
+      // Show raw output if JSON parse fails — auditor can still read it
+      document.getElementById('cm-output').textContent = '[JSON parse error — raw output below]
+
+' + raw;
+      document.getElementById('cm-output').classList.add('visible');
+      document.getElementById('cm-spinner').classList.remove('visible');
+      return;
+    }
+
+    // Render human-readable output
+    const displayText = [
+      `CONTROL_OBJECT — ${parsed.control_id}`,
+      `${'─'.repeat(50)}`,
+      `Name:              ${parsed.control_name}`,
+      `Domain:            ${parsed.assurance_domain}`,
+      `Subsystem:         ${parsed.subsystem}`,
+      `Tier applicability:${(parsed.tier_applicability||[]).join(', ')}`,
+      ``,
+      `Primary codex ref: ${parsed.primary_codex_ref}`,
+      `Secondary ref:     ${parsed.secondary_codex_ref}`,
+      `Source truth:      [${parsed.source_truth_status}]`,
+      ``,
+      `Risk:              ${parsed.risk_description}`,
+      `Risk rating:       ${parsed.risk_rating}`,
+      `Inherent risk:     ${parsed.inherent_risk}`,
+      `Residual risk:     ${parsed.residual_risk}`,
+      ``,
+      `Control type:      ${parsed.control_type}`,
+      `Control mode:      ${parsed.control_mode}`,
+      `Testing frequency: ${parsed.testing_frequency}`,
+      `AI procedure:      ${parsed.ai_testing_procedure}`,
+      `Manual procedure:  ${parsed.manual_procedure}`,
+      ``,
+      `Evidence artifacts:${parsed.evidence_artifacts}`,
+      `Drift indicator:   ${parsed.drift_indicator}`,
+      `Drift threshold:   ${parsed.drift_threshold}`,
+      ``,
+      `Reportable to:     ${(parsed.reportable_to||[]).join(', ')}`,
+      `Reporting SLA:     ${parsed.reporting_sla}`,
+      `Blind spot:        ${parsed.blind_spot_flag ? '['+parsed.blind_spot_note+']' : 'None'}`,
+      ``,
+      `CoT REASONING`,
+      `${'─'.repeat(50)}`,
+      `${parsed.cot_trigger}`,
+      `${parsed.cot_codex}`,
+      `${parsed.cot_tier}`,
+      `${parsed.cot_design}`,
+      `${parsed.cot_evidence}`,
+      `${parsed.cot_failure}`,
+      ``,
+      `FIELDWORK PACK (IIA 2310)`,
+      `${'─'.repeat(50)}`,
+      `Test steps:
+${parsed.fieldwork_test_steps}`,
+      ``,
+      `Sample size:       ${parsed.sample_size}`,
+      ``,
+      `Evidence request list:
+${parsed.evidence_request_list}`
+    ].join('
+');
+
+    document.getElementById('cm-output').textContent = displayText;
     document.getElementById('cm-output').classList.add('visible');
 
-    // Parse and store minimal control record
+    // Store structured record — all fields directly from parsed JSON
     const ctrl = {
-      id: controlId,
-      ctrl_domain: ctrlDomain,
-      ad_domain: domain,
-      subsystem: subsystem||'—',
+      id:            parsed.control_id,
+      ctrl_domain:   ctrlDomain,
+      ad_domain:     parsed.assurance_domain,
+      subsystem:     parsed.subsystem,
       tier,
-      focus: focus.substring(0,80),
-      raw: result,
-      created: new Date().toISOString(),
-      source_status: result.includes('VERIFIED-TRAINING')?'VT': result.includes('INFERRED')?'I':'U',
-      risk_rating: result.match(/risk_rating:\s*(Critical|High|Medium|Low)/i)?.[1]||'—',
-      codex_ref: result.match(/primary_codex_ref:\s*([^\n]+)/)?.[1]?.trim()||'—',
-      sla: result.match(/reporting_sla:\s*([^\n]+)/)?.[1]?.trim()||'—',
-      evidence: result.match(/evidence_artifacts:\s*([^\n]+)/)?.[1]?.trim()||'—',
-      ctrl_type: result.match(/control_type:\s*([^\n]+)/)?.[1]?.trim()||'—'
+      focus:         focus.substring(0,80),
+      raw:           displayText,
+      parsed,
+      created:       new Date().toISOString(),
+      source_status: parsed.source_truth_status==='VERIFIED-TRAINING'?'VT':
+                     parsed.source_truth_status==='INFERRED'?'I':'U',
+      risk_rating:   parsed.risk_rating||'—',
+      codex_ref:     parsed.primary_codex_ref||'—',
+      sla:           parsed.reporting_sla||'—',
+      evidence:      parsed.evidence_artifacts||'—',
+      ctrl_type:     parsed.control_type||'—'
     };
     controls.push(ctrl);
     LS.set('controls', controls);
@@ -978,16 +1049,52 @@ async function runTruthTable() {
   if (pii==='yes'||cii==='yes') governingSLA = 'Immediate';
   if (pii==='unknown'||cii==='unknown') governingSLA = 'Immediate (assume worst case)';
 
+  // D3 FIX: each agency row has explicit required boolean and sla — no cross-contamination
+  const ttRows = [
+    {
+      agency:   'RBI DAKSH',
+      required: true,
+      reqClass: 'tt-cell-yes',
+      reqLabel: '✓ Required',
+      sla:      '6 hours from detection',
+      start:    'Time of detection',
+      portal:   'DAKSH portal [BS-02: validate schema before submission]'
+    },
+    {
+      agency:   'CERT-In',
+      required: true,
+      reqClass: 'tt-cell-yes',
+      reqLabel: '✓ Required',
+      sla:      '6 hours from detection',
+      start:    'Time of detection',
+      portal:   'cert-in.org.in — incident reporting form'
+    },
+    {
+      agency:   'NCIIPC',
+      required: cii==='yes',
+      depends:  cii==='unknown',
+      reqClass: cii==='yes'?'tt-cell-yes': cii==='unknown'?'tt-cell-dep':'tt-cell-no',
+      reqLabel: cii==='yes'?'✓ Required': cii==='unknown'?'Depends — confirm CII status':'✗ Not required',
+      sla:      cii==='yes'?'Immediate': cii==='unknown'?'Pending CII confirmation':'—',
+      start:    cii!=='no'?'Time of detection':'—',
+      portal:   'nciipc.gov.in [BS-04: presumptive designation for SCB/NBFC-UL/TL]'
+    },
+    {
+      agency:   'DPDP Board',
+      required: pii==='yes',
+      depends:  pii==='unknown',
+      reqClass: pii==='yes'?'tt-cell-yes': pii==='unknown'?'tt-cell-dep':'tt-cell-no',
+      reqLabel: pii==='yes'?'✓ Required': pii==='unknown'?'Depends — confirm PII exposure':'✗ Not required',
+      sla:      pii==='yes'?'Immediate': pii==='unknown'?'Pending PII confirmation':'—',
+      start:    pii!=='no'?'Time of breach discovery':'—',
+      portal:   'MeitY/DPDP Board [BS-01: Rules not yet notified — form schema unknown]'
+    }
+  ];
   const tbody = document.getElementById('tt-tbody');
-  tbody.innerHTML = [
-    {agency:'RBI DAKSH', required:rbidaksh, sla:'6 hours from detection', start:'Time of detection', portal:'DAKSH portal (BS-02: validate schema before submission)'},
-    {agency:'CERT-In', required:certin, sla:'6 hours from detection', start:'Time of detection', portal:'cert-in.org.in — incident reporting form'},
-    {agency:'NCIIPC', required:nciipc, sla: cii==='yes'?'Immediate':'Depends — pending CII confirmation', start:'Time of detection', portal:'nciipc.gov.in secure portal (BS-04: presumptive designation)'},
-    {agency:'DPDP Board', required:dpdp, sla: pii==='yes'?'Immediate':'Depends — pending PII confirmation', start:'Time of breach discovery', portal:'MeitY/DPDP Board (BS-01: Rules pending — form schema unknown)'},
-  ].map(row=>`<tr>
+  tbody.innerHTML = ttRows.map(row=>`<tr>
     <td style="font-weight:600">${row.agency}</td>
-    <td class="${row.required?(hasDeps&&(row.agency==='NCIIPC'||row.agency==='DPDP Board')?'tt-cell-dep':'tt-cell-yes'):'tt-cell-no'}">${row.required?(row.required===true?'✓ Required':'Depends'):'✗ Not required'}</td>
-    <td style="font-weight:600;color:var(--risk-critical)">${row.sla}</td>
+    <td class="${row.reqClass}">${row.reqLabel}</td>
+    <td style="font-weight:600;color:${row.sla==='—'?'var(--text-muted)':'var(--risk-critical)'}">${row.sla}</td>
     <td style="font-size:12px">${row.start}</td>
     <td class="wrap" style="font-size:11px">${row.portal}</td>
   </tr>`).join('');
