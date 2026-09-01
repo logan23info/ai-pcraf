@@ -599,15 +599,16 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
 
 <!-- API KEY MODAL -->
 <div id="apikey-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
-  <div class="modal-box" style="width:400px">
-    <div class="modal-title">Set Anthropic API key</div>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Your key is stored in sessionStorage only — never sent anywhere except api.anthropic.com. Clears when you close the browser tab.</p>
-    <div class="form-group">
-      <label>API key</label>
-      <input type="password" id="apikey-input" placeholder="sk-ant-...">
+  <div class="modal-box" style="width:420px">
+    <div class="modal-title">Set Groq API key</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Your Groq API key — stored in sessionStorage only, never persisted, clears when tab closes.</p>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Groq API key</label>
+      <input type="password" id="apikey-input" placeholder="gsk_...">
     </div>
+    <p style="font-size:11px;color:var(--text-muted);margin-bottom:14px">Get your free key at <b>console.groq.com</b> &rarr; API Keys &nbsp;|&nbsp; Model: llama-3.3-70b-versatile</p>
     <div class="btn-row" style="margin-top:14px">
-      <button class="btn btn-primary" onclick="saveApiKey()">Save key</button>
+      <button class="btn btn-primary" onclick="saveApiKey()">Save</button>
       <button class="btn btn-secondary" onclick="closeApiModal()">Cancel</button>
     </div>
   </div>
@@ -650,34 +651,35 @@ function getKey() { return sessionStorage.getItem('pcraf_apikey') || ''; }
 
 async function callClaude(prompt, maxTokens=1000) {
   const key = getKey();
-  if (!key) { showToast('Set your API key first'); throw new Error('no key'); }
+  if (!key) { showToast("Set your API key first"); throw new Error("no key"); }
   let r;
   try {
-    r = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
+    r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method:"POST",
       headers:{
-        'Content-Type':'application/json',
-        'x-api-key': key,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
+        "Content-Type":"application/json",
+        "Authorization": "Bearer " + key
       },
       body: JSON.stringify({
-        model:'claude-sonnet-4-5',
+        model:"llama-3.3-70b-versatile",
         max_tokens: maxTokens,
-        messages:[{role:'user',content:prompt}]
+        messages:[
+          {role:"system", content:"You are a Principal Cyber Risk and Compliance Consultant under AI-PCRAF v1.0 for Indian BFSI IT Audit. Produce precise audit-ready outputs anchored to RBI, CERT-In, DPDP Act, NCIIPC, ReBIT, IFTAS. Tag every regulatory citation [VT]. Never fabricate citations."},
+          {role:"user", content:prompt}
+        ]
       })
     });
   } catch(netErr) {
-    throw new Error('Network error — check internet connection: ' + netErr.message);
+    throw new Error("Network error: " + netErr.message);
   }
   let d;
-  try { d = await r.json(); } catch { throw new Error('API returned non-JSON response (status '+r.status+')'); }
+  try { d = await r.json(); } catch { throw new Error("API returned non-JSON (status "+r.status+")"); }
   if (!r.ok || d.error) {
     const msg = d.error?.message || JSON.stringify(d);
-    console.error('Anthropic API error:', r.status, d);
-    throw new Error('API error '+r.status+': '+msg);
+    console.error("Groq API error:", r.status, d);
+    throw new Error("API "+r.status+": "+msg);
   }
-  return d.content.map(b=>b.text||'').join('');
+  return d.choices?.[0]?.message?.content || "";
 }
 
 // ── TAB NAVIGATION ────────────────────────────────────────────────────────
@@ -704,15 +706,20 @@ function promptApiKey() {
   document.getElementById('apikey-modal').style.display='flex';
   const existing = getKey();
   if (existing) document.getElementById('apikey-input').value = existing;
+  const ws = sessionStorage.getItem('pcraf_workspace') || '';
+  if (ws) document.getElementById('workspace-input').value = ws;
 }
 function saveApiKey() {
   const k = document.getElementById('apikey-input').value.trim();
   if (!k) { showToast('Enter a key'); return; }
   sessionStorage.setItem('pcraf_apikey', k);
+  const ws = document.getElementById('workspace-input').value.trim();
+  if (ws) sessionStorage.setItem('pcraf_workspace', ws);
+  else sessionStorage.removeItem('pcraf_workspace');
   document.getElementById('api-dot').classList.add('connected');
-  document.getElementById('api-status-text').textContent = 'API key set';
+  document.getElementById('api-status-text').textContent = ws ? 'API key + workspace set' : 'API key set';
   closeApiModal();
-  showToast('API key saved for this session');
+  showToast('Saved for this session');
 }
 function closeApiModal() { document.getElementById('apikey-modal').style.display='none'; }
 
