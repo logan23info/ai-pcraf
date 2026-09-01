@@ -617,13 +617,13 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
 const LS = {
-  get: k => { try { return JSON.parse(localStorage.getItem('pcraf_'+k)) } catch { return null } },
+  get: k => { try { return JSON.parse(localStorage.getItem('pcraf_'+k)) } catch(e) { return null } },
   set: (k,v) => localStorage.setItem('pcraf_'+k, JSON.stringify(v)),
   del: k => localStorage.removeItem('pcraf_'+k)
 };
 let controls = LS.get('controls') || [];
 let entity   = LS.get('entity')   || {};
-let fetchStatus = LS.get('fetchStatus') || {f1:false,f2:false,f3:false,f4:false,f5:false,f6:false};
+let checklistState = LS.get('checklist') || Array(10).fill(false);
 
 const CHECKLIST_ITEMS = [
   'Scaffolding: all six scaffold layers addressed?',
@@ -637,9 +637,7 @@ const CHECKLIST_ITEMS = [
   'Source Truth: every claim carries a source truth status tag?',
   'Fabrication: no FABRICATION-RISK items in client-facing output?'
 ];
-let checklistState = LS.get('checklist') || Array(10).fill(false);
 
-// Domain seq counters
 const domainSeq = () => {
   const counts = {};
   controls.forEach(c => { counts[c.ctrl_domain] = (counts[c.ctrl_domain]||0)+1; });
@@ -649,66 +647,68 @@ const domainSeq = () => {
 // ── API ────────────────────────────────────────────────────────────────────
 function getKey() { return sessionStorage.getItem('pcraf_apikey') || ''; }
 
-async function callClaude(prompt, maxTokens=1000) {
+async function callAPI(prompt, maxTokens) {
   const key = getKey();
-  if (!key) { showToast("Set your API key first"); throw new Error("no key"); }
+  if (!key) { showToast('Set your API key first'); throw new Error('no key'); }
+  maxTokens = maxTokens || 1200;
   let r;
   try {
-    r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "Authorization": "Bearer " + key
-      },
+    r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
       body: JSON.stringify({
-        model:"openai/gpt-oss-120b",
+        model: 'openai/gpt-oss-120b',
         max_tokens: maxTokens,
-        messages:[
-          {role:"system", content:"You are a Principal Cyber Risk and Compliance Consultant under AI-PCRAF v1.0 for Indian BFSI IT Audit. Produce precise audit-ready outputs anchored to RBI, CERT-In, DPDP Act, NCIIPC, ReBIT, IFTAS. Tag every regulatory citation [VT]. Never fabricate citations."},
-          {role:"user", content:prompt}
+        messages: [
+          { role: 'system', content: 'You are a Principal Cyber Risk and Compliance Consultant under AI-PCRAF v1.0 for Indian BFSI IT Audit. Produce precise audit-ready outputs anchored to RBI IT Gov MD 2023, CERT-In Directions 2022, DPDP Act 2023, NCIIPC, ReBIT, IFTAS. Tag every regulatory citation [VT]. Never fabricate citations.' },
+          { role: 'user', content: prompt }
         ]
       })
     });
-  } catch(netErr) {
-    throw new Error("Network error: " + netErr.message);
-  }
+  } catch(e) { throw new Error('Network error: ' + e.message); }
   let d;
-  try { d = await r.json(); } catch { throw new Error("API returned non-JSON (status "+r.status+")"); }
+  try { d = await r.json(); } catch(e) { throw new Error('Non-JSON response (status ' + r.status + ')'); }
   if (!r.ok || d.error) {
-    const msg = d.error?.message || JSON.stringify(d);
-    console.error("Groq API error:", r.status, d);
-    throw new Error("API "+r.status+": "+msg);
+    console.error('API error:', r.status, d);
+    throw new Error('API ' + r.status + ': ' + (d.error && d.error.message ? d.error.message : JSON.stringify(d)));
   }
-  return d.choices?.[0]?.message?.content || "";
+  return (d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) ? d.choices[0].message.content : '';
 }
 
 // ── TAB NAVIGATION ────────────────────────────────────────────────────────
 const TABS = ['entity','controls','truth','blindspots','export'];
-const TITLES = {entity:'Entity Profiler',controls:'Control Matrix Builder',truth:'Truth Table — Incident Classifier',blindspots:'Blind Spot Register & Fabrication Control',export:'Export & Backup'};
+const TITLES = {
+  entity:     'Entity Profiler',
+  controls:   'Control Matrix Builder',
+  truth:      'Truth Table — Incident Classifier',
+  blindspots: 'Blind Spot Register & Fabrication Control',
+  export:     'Export & Backup'
+};
 function showTab(name) {
-  TABS.forEach(t => {
+  TABS.forEach(function(t) {
     document.getElementById('tab-'+t).classList.toggle('active', t===name);
     document.getElementById('nav-'+t).classList.toggle('active', t===name);
   });
   document.getElementById('topbar-title').textContent = TITLES[name];
-  if (name==='export') updateStats();
+  if (name === 'export') updateStats();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2500);
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2800);
 }
 
 // ── API KEY ───────────────────────────────────────────────────────────────
 function promptApiKey() {
-  document.getElementById('apikey-modal').style.display='flex';
-  const existing = getKey();
+  document.getElementById('apikey-modal').style.display = 'flex';
+  var existing = getKey();
   if (existing) document.getElementById('apikey-input').value = existing;
 }
 function saveApiKey() {
-  const k = document.getElementById('apikey-input').value.trim();
+  var k = document.getElementById('apikey-input').value.trim();
   if (!k) { showToast('Enter a key'); return; }
   sessionStorage.setItem('pcraf_apikey', k);
   document.getElementById('api-dot').classList.add('connected');
@@ -716,103 +716,99 @@ function saveApiKey() {
   closeApiModal();
   showToast('Groq key saved for this session');
 }
-function closeApiModal() { document.getElementById('apikey-modal').style.display='none'; }
+function closeApiModal() { document.getElementById('apikey-modal').style.display = 'none'; }
 
 // ── CHECKLIST ─────────────────────────────────────────────────────────────
 function openChecklist() {
-  const wrap = document.getElementById('checklist-items');
-  wrap.innerHTML = CHECKLIST_ITEMS.map((item,i) => `
-    <div class="checklist-item">
-      <input type="checkbox" id="cl-${i}" ${checklistState[i]?'checked':''} onchange="toggleCheck(${i})">
-      <label for="cl-${i}" class="${checklistState[i]?'done':''}">${item}</label>
-    </div>`).join('');
+  var wrap = document.getElementById('checklist-items');
+  wrap.innerHTML = CHECKLIST_ITEMS.map(function(item, i) {
+    return '<div class="checklist-item">' +
+      '<input type="checkbox" id="cl-' + i + '" ' + (checklistState[i] ? 'checked' : '') + ' onchange="toggleCheck(' + i + ')">' +
+      '<label for="cl-' + i + '" class="' + (checklistState[i] ? 'done' : '') + '">' + item + '</label>' +
+      '</div>';
+  }).join('');
   document.getElementById('checklist-modal').classList.add('open');
 }
 function toggleCheck(i) {
   checklistState[i] = !checklistState[i];
-  const lbl = document.querySelector(`#cl-${i} + label`)||document.querySelector(`label[for=cl-${i}]`);
-  if(lbl) lbl.classList.toggle('done', checklistState[i]);
+  var lbl = document.querySelector('label[for="cl-' + i + '"]');
+  if (lbl) lbl.classList.toggle('done', checklistState[i]);
   LS.set('checklist', checklistState);
 }
 function closeChecklist() { document.getElementById('checklist-modal').classList.remove('open'); }
-function resetChecklist() { checklistState = Array(10).fill(false); LS.set('checklist',checklistState); openChecklist(); }
+function resetChecklist() { checklistState = Array(10).fill(false); LS.set('checklist', checklistState); openChecklist(); }
 
 // ── ENTITY PROFILER ───────────────────────────────────────────────────────
 function saveEntity() {
   entity = {
-    name: document.getElementById('ep-name').value,
-    type: document.getElementById('ep-type').value,
-    cbs:  document.getElementById('ep-cbs').value,
-    cloud:document.getElementById('ep-cloud').value,
-    assets:document.getElementById('ep-assets').value,
-    period:document.getElementById('ep-period').value,
-    risks:document.getElementById('ep-risks').value
+    name:   document.getElementById('ep-name').value,
+    type:   document.getElementById('ep-type').value,
+    cbs:    document.getElementById('ep-cbs').value,
+    cloud:  document.getElementById('ep-cloud').value,
+    assets: document.getElementById('ep-assets').value,
+    period: document.getElementById('ep-period').value,
+    risks:  document.getElementById('ep-risks').value
   };
   LS.set('entity', entity);
   showToast('Entity saved');
 }
 function loadEntity() {
-  const e = LS.get('entity');
+  var e = LS.get('entity');
   if (!e) { showToast('No saved entity'); return; }
-  document.getElementById('ep-name').value = e.name||'';
-  document.getElementById('ep-type').value = e.type||'';
-  document.getElementById('ep-cbs').value  = e.cbs||'';
-  document.getElementById('ep-cloud').value= e.cloud||'';
-  document.getElementById('ep-assets').value=e.assets||'';
-  document.getElementById('ep-period').value=e.period||'';
-  document.getElementById('ep-risks').value= e.risks||'';
+  document.getElementById('ep-name').value   = e.name   || '';
+  document.getElementById('ep-type').value   = e.type   || '';
+  document.getElementById('ep-cbs').value    = e.cbs    || '';
+  document.getElementById('ep-cloud').value  = e.cloud  || '';
+  document.getElementById('ep-assets').value = e.assets || '';
+  document.getElementById('ep-period').value = e.period || '';
+  document.getElementById('ep-risks').value  = e.risks  || '';
   showToast('Entity loaded');
 }
 
 async function generateEntityProfile() {
-  const name  = document.getElementById('ep-name').value.trim();
-  const type  = document.getElementById('ep-type').value;
-  const cbs   = document.getElementById('ep-cbs').value.trim();
-  const cloud = document.getElementById('ep-cloud').value;
-  const assets= document.getElementById('ep-assets').value.trim();
-  const period= document.getElementById('ep-period').value.trim();
-  const risks = document.getElementById('ep-risks').value.trim();
+  var name   = document.getElementById('ep-name').value.trim();
+  var type   = document.getElementById('ep-type').value;
+  var cbs    = document.getElementById('ep-cbs').value.trim();
+  var cloud  = document.getElementById('ep-cloud').value;
+  var assets = document.getElementById('ep-assets').value.trim();
+  var period = document.getElementById('ep-period').value.trim();
+  var risks  = document.getElementById('ep-risks').value.trim();
 
-  if (!name||!type) { showToast('Enter entity name and type'); return; }
+  if (!name || !type) { showToast('Enter entity name and type'); return; }
   saveEntity();
 
   document.getElementById('ep-spinner').classList.add('visible');
   document.getElementById('ep-output').classList.remove('visible');
   document.getElementById('ep-generate-btn').disabled = true;
 
-  const prompt = `You are a Principal Cyber Risk & Compliance Consultant operating under the AI-PCRAF v1.0 governing framework for Indian BFSI IT Audit.
-
-Entity details:
-- Name: ${name}
-- Type: ${type}
-- Core banking system: ${cbs||'Unknown'}
-- Cloud footprint: ${cloud}
-- IT assets: ${assets||'Not specified'}
-- Audit period: ${period||'Not specified'}
-- Key risk areas: ${risks||'Not specified'}
-
-Produce a structured Phase 1 — Entity Risk Profile covering:
-1. Tier classification and what regulatory obligations this tier triggers under RBI IT Gov MD 2023
-2. Top 5 applicable assurance domains (AD-01 to AD-07) for this entity with brief rationale
-3. Tier-drift alert matrix — what changes if this entity moves up or down a tier
-4. CII designation assessment (reference BS-04 if uncertain)
-5. Recommended audit focus areas for this engagement
-
-Format clearly with section headers. Tag every regulatory citation with [VT] (verified-training) since live fetch is pending. Flag any DPDP-related items with [BS-01].`;
+  var prompt = 'You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v1.0 for Indian BFSI IT Audit.\n\n' +
+    'Entity details:\n' +
+    '- Name: ' + name + '\n' +
+    '- Type: ' + type + '\n' +
+    '- Core banking system: ' + (cbs || 'Unknown') + '\n' +
+    '- Cloud footprint: ' + cloud + '\n' +
+    '- IT assets: ' + (assets || 'Not specified') + '\n' +
+    '- Audit period: ' + (period || 'Not specified') + '\n' +
+    '- Key risk areas: ' + (risks || 'Not specified') + '\n\n' +
+    'Produce a structured Phase 1 Entity Risk Profile covering:\n' +
+    '1. Tier classification and regulatory obligations under RBI IT Gov MD 2023\n' +
+    '2. Top 5 applicable assurance domains (AD-01 to AD-07) with rationale\n' +
+    '3. Tier-drift alert matrix — what changes if entity moves up or down a tier\n' +
+    '4. CII designation assessment (reference BS-04 if uncertain)\n' +
+    '5. Recommended audit focus areas for this engagement\n\n' +
+    'Format with clear section headers. Tag every regulatory citation [VT]. Flag any DPDP items [BS-01].';
 
   try {
-    const result = await callClaude(prompt, 1000);
-    const out = document.getElementById('ep-output');
+    var result = await callAPI(prompt, 1000);
+    var out = document.getElementById('ep-output');
     out.textContent = result;
     out.classList.add('visible');
-
-    // Update header block
-    document.getElementById('header-block-entity').style.display='block';
+    document.getElementById('header-block-entity').style.display = 'block';
     document.getElementById('hb-tier').textContent = type;
     document.getElementById('hb-date').textContent = new Date().toLocaleString('en-IN');
-    document.getElementById('entity-badge-topbar').innerHTML = `<span class="tier-badge">${type}</span>`;
+    document.getElementById('entity-badge-topbar').innerHTML = '<span class="tier-badge">' + type + '</span>';
   } catch(e) {
-    document.getElementById('ep-output').textContent = 'Error: '+e.message;
+    document.getElementById('ep-output').textContent = 'Error: ' + e.message;
     document.getElementById('ep-output').classList.add('visible');
   } finally {
     document.getElementById('ep-spinner').classList.remove('visible');
@@ -822,167 +818,161 @@ Format clearly with section headers. Tag every regulatory citation with [VT] (ve
 
 // ── CONTROL MATRIX ────────────────────────────────────────────────────────
 async function generateControl() {
-  const domain    = document.getElementById('cm-domain').value;
-  const ctrlDomain= document.getElementById('cm-ctrl-domain').value;
-  const subsystem = document.getElementById('cm-subsystem').value.trim();
-  const tier      = document.getElementById('cm-tier').value;
-  const focus     = document.getElementById('cm-focus').value.trim();
+  var domain     = document.getElementById('cm-domain').value;
+  var ctrlDomain = document.getElementById('cm-ctrl-domain').value;
+  var subsystem  = document.getElementById('cm-subsystem').value.trim();
+  var tier       = document.getElementById('cm-tier').value;
+  var focus      = document.getElementById('cm-focus').value.trim();
 
   if (!focus) { showToast('Describe the control focus'); return; }
 
-  const seq = (domainSeq()[ctrlDomain]||0) + 1;
-  const controlId = `CA-${ctrlDomain}-${String(seq).padStart(2,'0')}`;
+  var seq = (domainSeq()[ctrlDomain] || 0) + 1;
+  var controlId = 'CA-' + ctrlDomain + '-' + String(seq).padStart(2, '0');
 
   document.getElementById('cm-spinner').classList.add('visible');
   document.getElementById('cm-output').classList.remove('visible');
 
-  const entityCtx = entity.name
-    ? `Target entity: ${entity.name} (${entity.type||tier}). CBS: ${entity.cbs||'unknown'}.`
-    : `Target tier: ${tier}.`;
+  var entityCtx = entity.name
+    ? 'Target entity: ' + entity.name + ' (' + (entity.type || tier) + '). CBS: ' + (entity.cbs || 'unknown') + '.'
+    : 'Target tier: ' + tier + '.';
 
-  // D1+D2 FIX: JSON-mode prompt — deterministic schema, no text variation
-  const prompt = `You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v1.0 for Indian BFSI IT Audit.
-${entityCtx}
-Control focus: ${focus}
-Assurance domain: ${domain}
-Control domain: ${ctrlDomain}
-Subsystem: ${subsystem||'(derive from control focus)'}
-Entity tier: ${tier}
-Control ID: ${controlId}
-
-Respond ONLY with a valid JSON object. No preamble, no explanation, no markdown fences. The JSON must have exactly these fields:
-
-{
-  "control_id": "${controlId}",
-  "control_name": "concise name",
-  "assurance_domain": "${domain}",
-  "subsystem": "specific subsystem name",
-  "tier_applicability": ["tier1","tier2"],
-  "primary_codex_ref": "RBI IT Gov MD 2023, Section X.X — exact title",
-  "secondary_codex_ref": "additional citation",
-  "source_truth_status": "VERIFIED-TRAINING",
-  "risk_description": "clear risk statement",
-  "risk_rating": "Critical|High|Medium|Low",
-  "inherent_risk": "risk before controls",
-  "residual_risk": "risk after controls",
-  "control_type": "Preventive|Detective|Corrective",
-  "control_mode": "Automated|Manual|Hybrid",
-  "ai_testing_procedure": "what the AI engine tests continuously",
-  "manual_procedure": "what the human auditor does periodically",
-  "testing_frequency": "Continuous|Monthly|Quarterly|Annual",
-  "evidence_artifacts": "artifact name | format | retention period | immutable:yes/no",
-  "drift_indicator": "what signals configuration drift",
-  "drift_threshold": "what triggers an alert",
-  "reportable_to": ["RBI_DAKSH","CERT-In"],
-  "reporting_sla": "6 hours from detection",
-  "fabrication_flag": "VT",
-  "blind_spot_flag": false,
-  "blind_spot_note": "",
-  "cot_trigger": "Step 1 — what regulatory event triggers this",
-  "cot_codex": "Step 2 — specific regulation and section number",
-  "cot_tier": "Step 3 — how obligation differs across tiers",
-  "cot_design": "Step 4 — precise control design, AI vs human split",
-  "cot_evidence": "Step 5 — exact artifact: file type, retention, immutability",
-  "cot_failure": "Step 6 — what drift or failure looks like, escalation path",
-  "fieldwork_test_steps": "1. Step one\n2. Step two\n3. Step three",
-  "sample_size": "e.g. 25 transactions / all privileged accounts / last 90 days",
-  "evidence_request_list": "1. Document one\n2. Document two\n3. Document three"
-}`;
+  // D1+D2: JSON-mode prompt — single deterministic schema
+  var prompt = 'You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v1.0 for Indian BFSI IT Audit.\n' +
+    entityCtx + '\n' +
+    'Control focus: ' + focus + '\n' +
+    'Assurance domain: ' + domain + '\n' +
+    'Control domain: ' + ctrlDomain + '\n' +
+    'Subsystem: ' + (subsystem || '(derive from control focus)') + '\n' +
+    'Entity tier: ' + tier + '\n' +
+    'Control ID: ' + controlId + '\n\n' +
+    'Respond ONLY with a valid JSON object. No preamble, no markdown fences, no explanation.\n' +
+    'Use exactly these keys:\n' +
+    '{\n' +
+    '  "control_id": "' + controlId + '",\n' +
+    '  "control_name": "concise name",\n' +
+    '  "assurance_domain": "' + domain + '",\n' +
+    '  "subsystem": "specific subsystem",\n' +
+    '  "tier_applicability": ["tier1","tier2"],\n' +
+    '  "primary_codex_ref": "RBI IT Gov MD 2023, Section X.X title",\n' +
+    '  "secondary_codex_ref": "additional citation",\n' +
+    '  "source_truth_status": "VERIFIED-TRAINING",\n' +
+    '  "risk_description": "clear risk statement",\n' +
+    '  "risk_rating": "Critical",\n' +
+    '  "inherent_risk": "risk before controls",\n' +
+    '  "residual_risk": "risk after controls",\n' +
+    '  "control_type": "Preventive",\n' +
+    '  "control_mode": "Hybrid",\n' +
+    '  "ai_testing_procedure": "continuous AI test description",\n' +
+    '  "manual_procedure": "periodic human audit steps",\n' +
+    '  "testing_frequency": "Quarterly",\n' +
+    '  "evidence_artifacts": "artifact | format | retention | immutable:yes",\n' +
+    '  "drift_indicator": "what signals drift",\n' +
+    '  "drift_threshold": "what triggers alert",\n' +
+    '  "reportable_to": ["RBI_DAKSH","CERT-In"],\n' +
+    '  "reporting_sla": "6 hours from detection",\n' +
+    '  "fabrication_flag": "VT",\n' +
+    '  "blind_spot_flag": false,\n' +
+    '  "blind_spot_note": "",\n' +
+    '  "cot_trigger": "Step 1 regulatory trigger",\n' +
+    '  "cot_codex": "Step 2 specific section",\n' +
+    '  "cot_tier": "Step 3 tier calibration",\n' +
+    '  "cot_design": "Step 4 control design",\n' +
+    '  "cot_evidence": "Step 5 evidence spec",\n' +
+    '  "cot_failure": "Step 6 failure mode",\n' +
+    '  "fieldwork_test_steps": "1. First step. 2. Second step. 3. Third step.",\n' +
+    '  "sample_size": "e.g. all privileged accounts / last 90 days",\n' +
+    '  "evidence_request_list": "1. Document one. 2. Document two. 3. Document three."\n' +
+    '}';
 
   try {
-    const raw = await callClaude(prompt, 1200);
-
-    // Deterministic JSON parser — strip any accidental fences
-    let parsed;
+    var raw = await callAPI(prompt, 1200);
+    var clean = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+    var parsed;
     try {
-      const clean = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
       parsed = JSON.parse(clean);
-    } catch(parseErr) {
-      // Show raw output if JSON parse fails — auditor can still read it
-      document.getElementById('cm-output').textContent = '[JSON parse error — raw output below]\n\n' + raw;
+    } catch(pe) {
+      document.getElementById('cm-output').textContent = '[JSON parse error — raw output:]\n\n' + raw;
       document.getElementById('cm-output').classList.add('visible');
-      document.getElementById('cm-spinner').classList.remove('visible');
       return;
     }
 
-    // Render human-readable output
-    const displayText = [
-      `CONTROL_OBJECT — ${parsed.control_id}`,
-      `${'─'.repeat(50)}`,
-      `Name:              ${parsed.control_name}`,
-      `Domain:            ${parsed.assurance_domain}`,
-      `Subsystem:         ${parsed.subsystem}`,
-      `Tier applicability:${(parsed.tier_applicability||[]).join(', ')}`,
-      ``,
-      `Primary codex ref: ${parsed.primary_codex_ref}`,
-      `Secondary ref:     ${parsed.secondary_codex_ref}`,
-      `Source truth:      [${parsed.source_truth_status}]`,
-      ``,
-      `Risk:              ${parsed.risk_description}`,
-      `Risk rating:       ${parsed.risk_rating}`,
-      `Inherent risk:     ${parsed.inherent_risk}`,
-      `Residual risk:     ${parsed.residual_risk}`,
-      ``,
-      `Control type:      ${parsed.control_type}`,
-      `Control mode:      ${parsed.control_mode}`,
-      `Testing frequency: ${parsed.testing_frequency}`,
-      `AI procedure:      ${parsed.ai_testing_procedure}`,
-      `Manual procedure:  ${parsed.manual_procedure}`,
-      ``,
-      `Evidence artifacts:${parsed.evidence_artifacts}`,
-      `Drift indicator:   ${parsed.drift_indicator}`,
-      `Drift threshold:   ${parsed.drift_threshold}`,
-      ``,
-      `Reportable to:     ${(parsed.reportable_to||[]).join(', ')}`,
-      `Reporting SLA:     ${parsed.reporting_sla}`,
-      `Blind spot:        ${parsed.blind_spot_flag ? '['+parsed.blind_spot_note+']' : 'None'}`,
-      ``,
-      `CoT REASONING`,
-      `${'─'.repeat(50)}`,
-      `${parsed.cot_trigger}`,
-      `${parsed.cot_codex}`,
-      `${parsed.cot_tier}`,
-      `${parsed.cot_design}`,
-      `${parsed.cot_evidence}`,
-      `${parsed.cot_failure}`,
-      ``,
-      `FIELDWORK PACK (IIA 2310)`,
-      `${'─'.repeat(50)}`,
-      'Test steps:\n' + parsed.fieldwork_test_steps,
-      ``,
-      `Sample size:       ${parsed.sample_size}`,
-      ``,
-      'Evidence request list:\n' + parsed.evidence_request_list
-    ].join('\n');
+    // D4: Render with fieldwork pack
+    var lines = [
+      'CONTROL_OBJECT  ' + parsed.control_id,
+      '─────────────────────────────────────────────────',
+      'Name            ' + parsed.control_name,
+      'Domain          ' + parsed.assurance_domain,
+      'Subsystem       ' + parsed.subsystem,
+      'Tier            ' + (parsed.tier_applicability || []).join(', '),
+      '',
+      'Primary ref     ' + parsed.primary_codex_ref,
+      'Secondary ref   ' + parsed.secondary_codex_ref,
+      'Source truth    [' + parsed.source_truth_status + ']',
+      '',
+      'Risk            ' + parsed.risk_description,
+      'Risk rating     ' + parsed.risk_rating,
+      'Inherent risk   ' + parsed.inherent_risk,
+      'Residual risk   ' + parsed.residual_risk,
+      '',
+      'Control type    ' + parsed.control_type,
+      'Control mode    ' + parsed.control_mode,
+      'Frequency       ' + parsed.testing_frequency,
+      'AI procedure    ' + parsed.ai_testing_procedure,
+      'Manual proc.    ' + parsed.manual_procedure,
+      '',
+      'Evidence        ' + parsed.evidence_artifacts,
+      'Drift indicator ' + parsed.drift_indicator,
+      'Drift threshold ' + parsed.drift_threshold,
+      '',
+      'Reportable to   ' + (parsed.reportable_to || []).join(', '),
+      'Reporting SLA   ' + parsed.reporting_sla,
+      'Blind spot      ' + (parsed.blind_spot_flag ? parsed.blind_spot_note : 'None'),
+      '',
+      'COT REASONING',
+      '─────────────────────────────────────────────────',
+      parsed.cot_trigger,
+      parsed.cot_codex,
+      parsed.cot_tier,
+      parsed.cot_design,
+      parsed.cot_evidence,
+      parsed.cot_failure,
+      '',
+      'FIELDWORK PACK  (IIA Standard 2310)',
+      '─────────────────────────────────────────────────',
+      'Test steps:     ' + parsed.fieldwork_test_steps,
+      'Sample size:    ' + parsed.sample_size,
+      'Evidence req:   ' + parsed.evidence_request_list
+    ];
+    var displayText = lines.join('\n');
 
     document.getElementById('cm-output').textContent = displayText;
     document.getElementById('cm-output').classList.add('visible');
 
-    // Store structured record — all fields directly from parsed JSON
-    const ctrl = {
-      id:            parsed.control_id,
-      ctrl_domain:   ctrlDomain,
-      ad_domain:     parsed.assurance_domain,
-      subsystem:     parsed.subsystem,
-      tier,
-      focus:         focus.substring(0,80),
-      raw:           displayText,
-      parsed,
-      created:       new Date().toISOString(),
-      source_status: parsed.source_truth_status==='VERIFIED-TRAINING'?'VT':
-                     parsed.source_truth_status==='INFERRED'?'I':'U',
-      risk_rating:   parsed.risk_rating||'—',
-      codex_ref:     parsed.primary_codex_ref||'—',
-      sla:           parsed.reporting_sla||'—',
-      evidence:      parsed.evidence_artifacts||'—',
-      ctrl_type:     parsed.control_type||'—'
+    // Store — all fields from parsed JSON, no regex
+    var ctrl = {
+      id:           parsed.control_id,
+      ctrl_domain:  ctrlDomain,
+      ad_domain:    parsed.assurance_domain,
+      subsystem:    parsed.subsystem,
+      tier:         tier,
+      focus:        focus.substring(0, 80),
+      raw:          displayText,
+      parsed:       parsed,
+      created:      new Date().toISOString(),
+      source_status: parsed.source_truth_status === 'VERIFIED-TRAINING' ? 'VT' :
+                     parsed.source_truth_status === 'INFERRED' ? 'I' : 'U',
+      risk_rating:  parsed.risk_rating  || '—',
+      codex_ref:    parsed.primary_codex_ref || '—',
+      sla:          parsed.reporting_sla || '—',
+      evidence:     parsed.evidence_artifacts || '—',
+      ctrl_type:    parsed.control_type || '—'
     };
     controls.push(ctrl);
     LS.set('controls', controls);
     renderControlTable();
-    showToast(`${controlId} saved`);
+    showToast(controlId + ' saved');
   } catch(e) {
-    document.getElementById('cm-output').textContent = 'Error: '+e.message;
+    document.getElementById('cm-output').textContent = 'Error: ' + e.message;
     document.getElementById('cm-output').classList.add('visible');
   } finally {
     document.getElementById('cm-spinner').classList.remove('visible');
@@ -990,141 +980,132 @@ Respond ONLY with a valid JSON object. No preamble, no explanation, no markdown 
 }
 
 function renderControlTable() {
-  const tbody = document.getElementById('control-tbody');
+  var tbody = document.getElementById('control-tbody');
   document.getElementById('control-table-wrap').style.display = controls.length ? 'block' : 'none';
   document.getElementById('ctrl-count').textContent = controls.length;
-  tbody.innerHTML = controls.map((c,i) => `
-    <tr>
-      <td class="mono">${c.id}</td>
-      <td style="white-space:nowrap;font-size:11px">${c.ad_domain}</td>
-      <td class="wrap">${c.subsystem}</td>
-      <td><span class="tier-badge" style="font-size:10px">${c.tier}</span></td>
-      <td class="risk-${(c.risk_rating||'').toLowerCase()}">${c.risk_rating}</td>
-      <td class="wrap" style="font-size:11px">${c.codex_ref}</td>
-      <td style="font-size:11px">${c.ctrl_type}</td>
-      <td class="wrap" style="font-size:11px">${c.evidence}</td>
-      <td style="font-size:11px;white-space:nowrap">${c.sla}</td>
-      <td><span class="tag tag-${(c.source_status||'u').toLowerCase()}">[${c.source_status||'U'}]</span></td>
-      <td><button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteControl(${i})">Remove</button></td>
-    </tr>`).join('');
+  tbody.innerHTML = controls.map(function(c, i) {
+    return '<tr>' +
+      '<td class="mono">' + c.id + '</td>' +
+      '<td style="white-space:nowrap;font-size:11px">' + c.ad_domain + '</td>' +
+      '<td class="wrap">' + c.subsystem + '</td>' +
+      '<td><span class="tier-badge" style="font-size:10px">' + c.tier + '</span></td>' +
+      '<td class="risk-' + (c.risk_rating || '').toLowerCase() + '">' + c.risk_rating + '</td>' +
+      '<td class="wrap" style="font-size:11px">' + c.codex_ref + '</td>' +
+      '<td style="font-size:11px">' + c.ctrl_type + '</td>' +
+      '<td class="wrap" style="font-size:11px">' + c.evidence + '</td>' +
+      '<td style="font-size:11px;white-space:nowrap">' + c.sla + '</td>' +
+      '<td><span class="tag tag-' + (c.source_status || 'u').toLowerCase() + '">[' + (c.source_status || 'U') + ']</span></td>' +
+      '<td><button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteControl(' + i + ')">Remove</button></td>' +
+      '</tr>';
+  }).join('');
 }
 
 function deleteControl(i) {
-  controls.splice(i,1);
-  LS.set('controls',controls);
+  controls.splice(i, 1);
+  LS.set('controls', controls);
   renderControlTable();
   showToast('Control removed');
 }
 function clearControls() {
   if (!confirm('Clear all controls?')) return;
   controls = [];
-  LS.set('controls',controls);
+  LS.set('controls', controls);
   renderControlTable();
   showToast('Controls cleared');
 }
 
 // ── TRUTH TABLE ───────────────────────────────────────────────────────────
 async function runTruthTable() {
-  const incident  = document.getElementById('tt-incident').value.trim();
-  const pii       = document.getElementById('tt-pii').value;
-  const cii       = document.getElementById('tt-cii').value;
-  const financial = document.getElementById('tt-financial').value;
+  var incident  = document.getElementById('tt-incident').value.trim();
+  var pii       = document.getElementById('tt-pii').value;
+  var cii       = document.getElementById('tt-cii').value;
+  var financial = document.getElementById('tt-financial').value;
 
   if (!incident) { showToast('Describe the incident'); return; }
 
-  const hasDeps = pii==='unknown'||cii==='unknown';
-
-  // Determine reporting obligations
-  const rbidaksh = true; // always required
-  const certin   = true; // always required
-  const nciipc   = cii==='yes' || cii==='unknown';
-  const dpdp     = pii==='yes' || pii==='unknown';
-
-  let governingSLA = '6 hours';
-  if (pii==='yes'||cii==='yes') governingSLA = 'Immediate';
-  if (pii==='unknown'||cii==='unknown') governingSLA = 'Immediate (assume worst case)';
-
-  // D3 FIX: each agency row has explicit required boolean and sla — no cross-contamination
-  const ttRows = [
+  // D3 FIX: each agency row resolved independently — no cross-contamination
+  var ttRows = [
     {
       agency:   'RBI DAKSH',
-      required: true,
       reqClass: 'tt-cell-yes',
-      reqLabel: '✓ Required',
+      reqLabel: '&#10003; Required',
       sla:      '6 hours from detection',
+      slaColor: 'var(--risk-critical)',
       start:    'Time of detection',
-      portal:   'DAKSH portal [BS-02: validate schema before submission]'
+      portal:   'DAKSH portal [BS-02: validate field schema before submission]'
     },
     {
       agency:   'CERT-In',
-      required: true,
       reqClass: 'tt-cell-yes',
-      reqLabel: '✓ Required',
+      reqLabel: '&#10003; Required',
       sla:      '6 hours from detection',
+      slaColor: 'var(--risk-critical)',
       start:    'Time of detection',
       portal:   'cert-in.org.in — incident reporting form'
     },
     {
       agency:   'NCIIPC',
-      required: cii==='yes',
-      depends:  cii==='unknown',
-      reqClass: cii==='yes'?'tt-cell-yes': cii==='unknown'?'tt-cell-dep':'tt-cell-no',
-      reqLabel: cii==='yes'?'✓ Required': cii==='unknown'?'Depends — confirm CII status':'✗ Not required',
-      sla:      cii==='yes'?'Immediate': cii==='unknown'?'Pending CII confirmation':'—',
-      start:    cii!=='no'?'Time of detection':'—',
-      portal:   'nciipc.gov.in [BS-04: presumptive designation for SCB/NBFC-UL/TL]'
+      reqClass: cii === 'yes' ? 'tt-cell-yes' : cii === 'unknown' ? 'tt-cell-dep' : 'tt-cell-no',
+      reqLabel: cii === 'yes' ? '&#10003; Required' : cii === 'unknown' ? 'Depends — confirm CII status' : '&#10007; Not required',
+      sla:      cii === 'yes' ? 'Immediate' : cii === 'unknown' ? 'Pending CII confirmation' : '—',
+      slaColor: cii === 'no' ? 'var(--text-muted)' : 'var(--risk-critical)',
+      start:    cii !== 'no' ? 'Time of detection' : '—',
+      portal:   'nciipc.gov.in [BS-04: SCBs and NBFC-UL/TL treated as presumptive CII]'
     },
     {
       agency:   'DPDP Board',
-      required: pii==='yes',
-      depends:  pii==='unknown',
-      reqClass: pii==='yes'?'tt-cell-yes': pii==='unknown'?'tt-cell-dep':'tt-cell-no',
-      reqLabel: pii==='yes'?'✓ Required': pii==='unknown'?'Depends — confirm PII exposure':'✗ Not required',
-      sla:      pii==='yes'?'Immediate': pii==='unknown'?'Pending PII confirmation':'—',
-      start:    pii!=='no'?'Time of breach discovery':'—',
+      reqClass: pii === 'yes' ? 'tt-cell-yes' : pii === 'unknown' ? 'tt-cell-dep' : 'tt-cell-no',
+      reqLabel: pii === 'yes' ? '&#10003; Required' : pii === 'unknown' ? 'Depends — confirm PII exposure' : '&#10007; Not required',
+      sla:      pii === 'yes' ? 'Immediate' : pii === 'unknown' ? 'Pending PII confirmation' : '—',
+      slaColor: pii === 'no' ? 'var(--text-muted)' : 'var(--risk-critical)',
+      start:    pii !== 'no' ? 'Time of breach discovery' : '—',
       portal:   'MeitY/DPDP Board [BS-01: Rules not yet notified — form schema unknown]'
     }
   ];
-  const tbody = document.getElementById('tt-tbody');
-  tbody.innerHTML = ttRows.map(row=>`<tr>
-    <td style="font-weight:600">${row.agency}</td>
-    <td class="${row.reqClass}">${row.reqLabel}</td>
-    <td style="font-weight:600;color:${row.sla==='—'?'var(--text-muted)':'var(--risk-critical)'}">${row.sla}</td>
-    <td style="font-size:12px">${row.start}</td>
-    <td class="wrap" style="font-size:11px">${row.portal}</td>
-  </tr>`).join('');
 
-  document.getElementById('tt-hcd').textContent = `Governing SLA (HCD rule): ${governingSLA} — this is the clock all teams must work to.`;
+  var tbody = document.getElementById('tt-tbody');
+  tbody.innerHTML = ttRows.map(function(row) {
+    return '<tr>' +
+      '<td style="font-weight:600">' + row.agency + '</td>' +
+      '<td class="' + row.reqClass + '">' + row.reqLabel + '</td>' +
+      '<td style="font-weight:600;color:' + row.slaColor + '">' + row.sla + '</td>' +
+      '<td style="font-size:12px">' + row.start + '</td>' +
+      '<td class="wrap" style="font-size:11px">' + row.portal + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var hasDeps = pii === 'unknown' || cii === 'unknown';
+  var governingSLA = '6 hours';
+  if (pii === 'yes' || cii === 'yes') governingSLA = 'Immediate';
+  if (hasDeps) governingSLA = 'Immediate (worst-case assumption — confirm dependencies)';
+
+  document.getElementById('tt-hcd').textContent = 'Governing SLA (HCD rule): ' + governingSLA + ' — all teams work to this clock.';
   document.getElementById('tt-depends-note').style.display = hasDeps ? 'block' : 'none';
   document.getElementById('tt-result').style.display = 'block';
 
-  // AI analysis
   document.getElementById('tt-spinner').classList.add('visible');
   document.getElementById('tt-output').classList.remove('visible');
 
-  const prompt = `You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v1.0.
-
-Incident: ${incident}
-PII involved: ${pii}
-CII asset involved: ${cii}
-Financial system involved: ${financial}
-
-Produce a structured incident analysis:
-1. Incident classification and severity assessment
-2. Reporting obligations with specific SLA calculations — cite CERT-In Directions April 2022 and RBI IT Gov MD 2023 section numbers [VT]
-3. Immediate response steps (first 2 hours)
-4. Evidence preservation requirements
-5. Any blind spots that apply (BS-01 to BS-08)
-6. De-duplication note — where reporting obligations overlap, identify the single action that satisfies multiple agencies
-
-Keep it actionable. Tag all regulatory citations [VT]. Flag DPDP items with [BS-01].`;
+  var prompt = 'You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v1.0.\n\n' +
+    'Incident: ' + incident + '\n' +
+    'PII involved: ' + pii + '\n' +
+    'CII asset involved: ' + cii + '\n' +
+    'Financial system involved: ' + financial + '\n\n' +
+    'Produce a structured incident analysis:\n' +
+    '1. Incident classification and severity (Sev-1/2/3)\n' +
+    '2. Reporting obligations with SLA calculations — cite CERT-In Directions April 2022 and RBI IT Gov MD 2023 section numbers [VT]\n' +
+    '3. Immediate response steps (first 2 hours)\n' +
+    '4. Evidence preservation requirements\n' +
+    '5. Applicable blind spots from BS-01 to BS-08\n' +
+    '6. De-duplication — where obligations overlap, identify single action satisfying multiple agencies\n\n' +
+    'Tag all regulatory citations [VT]. Flag DPDP items [BS-01].';
 
   try {
-    const result = await callClaude(prompt, 1000);
+    var result = await callAPI(prompt, 1000);
     document.getElementById('tt-output').textContent = result;
     document.getElementById('tt-output').classList.add('visible');
   } catch(e) {
-    document.getElementById('tt-output').textContent = 'Error: '+e.message;
+    document.getElementById('tt-output').textContent = 'Error: ' + e.message;
     document.getElementById('tt-output').classList.add('visible');
   } finally {
     document.getElementById('tt-spinner').classList.remove('visible');
@@ -1132,91 +1113,96 @@ Keep it actionable. Tag all regulatory citations [VT]. Flag DPDP items with [BS-
 }
 
 function resetTT() {
-  document.getElementById('tt-result').style.display='none';
+  document.getElementById('tt-result').style.display = 'none';
   document.getElementById('tt-output').classList.remove('visible');
-  document.getElementById('tt-output').textContent='';
-  document.getElementById('tt-incident').value='';
+  document.getElementById('tt-output').textContent = '';
+  document.getElementById('tt-incident').value = '';
 }
 
 // ── FETCH STATUS ──────────────────────────────────────────────────────────
 function markFetchDone() {
-  showToast('Mark individual fetches by noting them as verified in the dossier — open each URL and confirm manually');
+  showToast('Open each URL, verify manually, then note in your dossier as [V]');
 }
 
 // ── EXPORT ────────────────────────────────────────────────────────────────
 function exportJSON() {
-  const data = {
+  var data = {
     framework: 'AI-PCRAF v1.0',
-    exported: new Date().toISOString(),
-    entity: LS.get('entity')||{},
-    controls,
-    fetchStatus,
+    exported:  new Date().toISOString(),
+    entity:    LS.get('entity') || {},
+    controls:  controls,
     checklist: checklistState
   };
-  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a = document.createElement('a');
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `AI_PCRAF_export_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = 'AI_PCRAF_export_' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
   showToast('JSON exported');
 }
 
 function exportCSV() {
-  const header = ['Control ID','Domain','Subsystem','Tier','Risk Rating','Codex Ref','Control Type','Evidence','SLA','Source Status','Created'];
-  const rows = controls.map(c=>[
-    c.id, c.ad_domain, c.subsystem, c.tier, c.risk_rating,
-    `"${(c.codex_ref||'').replace(/"/g,'""')}"`,
-    c.ctrl_type,
-    `"${(c.evidence||'').replace(/"/g,'""')}"`,
-    c.sla, c.source_status,
-    new Date(c.created).toLocaleDateString('en-IN')
-  ]);
-  const csv = [header.join(','),...rows.map(r=>r.join(','))].join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const a = document.createElement('a');
+  var header = ['Control ID','Domain','Subsystem','Tier','Risk Rating','Codex Ref','Control Type','Evidence','SLA','Source Status','Created'];
+  var rows = controls.map(function(c) {
+    return [
+      c.id, c.ad_domain,
+      '"' + (c.subsystem  || '').replace(/"/g,'""') + '"',
+      c.tier, c.risk_rating,
+      '"' + (c.codex_ref  || '').replace(/"/g,'""') + '"',
+      c.ctrl_type,
+      '"' + (c.evidence   || '').replace(/"/g,'""') + '"',
+      '"' + (c.sla        || '').replace(/"/g,'""') + '"',
+      c.source_status,
+      new Date(c.created).toLocaleDateString('en-IN')
+    ].join(',');
+  });
+  var csv = [header.join(',')].concat(rows).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `AI_PCRAF_RCM_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = 'AI_PCRAF_RCM_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
   showToast('CSV exported');
 }
 
 function importJSON() {
-  const file = document.getElementById('import-file').files[0];
+  var file = document.getElementById('import-file').files[0];
   if (!file) { showToast('Select a file first'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
+  var reader = new FileReader();
+  reader.onload = function(e) {
     try {
-      const data = JSON.parse(e.target.result);
-      if (data.controls) { controls = data.controls; LS.set('controls',controls); }
-      if (data.entity)   { LS.set('entity',data.entity); entity = data.entity; }
-      if (data.checklist){ checklistState = data.checklist; LS.set('checklist',checklistState); }
+      var data = JSON.parse(e.target.result);
+      if (data.controls)  { controls = data.controls; LS.set('controls', controls); }
+      if (data.entity)    { LS.set('entity', data.entity); entity = data.entity; }
+      if (data.checklist) { checklistState = data.checklist; LS.set('checklist', checklistState); }
       renderControlTable();
       updateStats();
-      showToast('Import complete — '+controls.length+' controls loaded');
-    } catch { showToast('Invalid JSON file'); }
+      showToast('Import complete — ' + controls.length + ' controls loaded');
+    } catch(err) { showToast('Invalid JSON file'); }
   };
   reader.readAsText(file);
 }
 
 function updateStats() {
-  document.getElementById('stat-controls').textContent = controls.length;
-  document.getElementById('stat-verified').textContent = controls.filter(c=>c.source_status==='V'||c.source_status==='VT').length;
-  document.getElementById('stat-inferred').textContent = controls.filter(c=>c.source_status==='I').length;
-  document.getElementById('stat-unverified').textContent = controls.filter(c=>c.source_status==='U'||c.source_status==='FR').length;
+  document.getElementById('stat-controls').textContent   = controls.length;
+  document.getElementById('stat-verified').textContent   = controls.filter(function(c){ return c.source_status==='V'||c.source_status==='VT'; }).length;
+  document.getElementById('stat-inferred').textContent   = controls.filter(function(c){ return c.source_status==='I'; }).length;
+  document.getElementById('stat-unverified').textContent = controls.filter(function(c){ return c.source_status==='U'||c.source_status==='FR'; }).length;
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 (function init() {
   if (getKey()) {
     document.getElementById('api-dot').classList.add('connected');
-    document.getElementById('api-status-text').textContent = 'API key set';
+    document.getElementById('api-status-text').textContent = 'Groq API key set';
   }
   renderControlTable();
   updateStats();
   if (entity.type) {
-    document.getElementById('entity-badge-topbar').innerHTML = `<span class="tier-badge">${entity.type}</span>`;
+    document.getElementById('entity-badge-topbar').innerHTML = '<span class="tier-badge">' + entity.type + '</span>';
   }
 })();
+</script>
 </script>
 </body>
 </html>
