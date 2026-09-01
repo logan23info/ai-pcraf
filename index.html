@@ -651,17 +651,32 @@ function getKey() { return sessionStorage.getItem('pcraf_apikey') || ''; }
 async function callClaude(prompt, maxTokens=1000) {
   const key = getKey();
   if (!key) { showToast('Set your API key first'); throw new Error('no key'); }
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body: JSON.stringify({
-      model:'claude-sonnet-4-6',
-      max_tokens: maxTokens,
-      messages:[{role:'user',content:prompt}]
-    })
-  });
-  const d = await r.json();
-  if (d.error) throw new Error(d.error.message);
+  let r;
+  try {
+    r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens: maxTokens,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+  } catch(netErr) {
+    throw new Error('Network error — check internet connection: ' + netErr.message);
+  }
+  let d;
+  try { d = await r.json(); } catch { throw new Error('API returned non-JSON response (status '+r.status+')'); }
+  if (!r.ok || d.error) {
+    const msg = d.error?.message || JSON.stringify(d);
+    console.error('Anthropic API error:', r.status, d);
+    throw new Error('API error '+r.status+': '+msg);
+  }
   return d.content.map(b=>b.text||'').join('');
 }
 
