@@ -706,20 +706,15 @@ function promptApiKey() {
   document.getElementById('apikey-modal').style.display='flex';
   const existing = getKey();
   if (existing) document.getElementById('apikey-input').value = existing;
-  const ws = sessionStorage.getItem('pcraf_workspace') || '';
-  if (ws) document.getElementById('workspace-input').value = ws;
 }
 function saveApiKey() {
   const k = document.getElementById('apikey-input').value.trim();
   if (!k) { showToast('Enter a key'); return; }
   sessionStorage.setItem('pcraf_apikey', k);
-  const ws = document.getElementById('workspace-input').value.trim();
-  if (ws) sessionStorage.setItem('pcraf_workspace', ws);
-  else sessionStorage.removeItem('pcraf_workspace');
   document.getElementById('api-dot').classList.add('connected');
-  document.getElementById('api-status-text').textContent = ws ? 'API key + workspace set' : 'API key set';
+  document.getElementById('api-status-text').textContent = 'Groq API key set';
   closeApiModal();
-  showToast('Saved for this session');
+  showToast('Groq key saved for this session');
 }
 function closeApiModal() { document.getElementById('apikey-modal').style.display='none'; }
 
