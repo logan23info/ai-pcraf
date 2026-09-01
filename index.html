@@ -606,7 +606,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       <label>Groq API key</label>
       <input type="password" id="apikey-input" placeholder="gsk_...">
     </div>
-    <p style="font-size:11px;color:var(--text-muted);margin-bottom:14px">Get your free key at <b>console.groq.com</b> &rarr; API Keys &nbsp;|&nbsp; Model: llama-3.3-70b</p>
+    <p style="font-size:11px;color:var(--text-muted);margin-bottom:14px">Get your free key at <b>console.groq.com</b> &rarr; API Keys &nbsp;|&nbsp; Model: openai/gpt-oss-120b</p>
     <div class="btn-row" style="margin-top:14px">
       <button class="btn btn-primary" onclick="saveApiKey()">Save</button>
       <button class="btn btn-secondary" onclick="closeApiModal()">Cancel</button>
@@ -661,7 +661,7 @@ async function callClaude(prompt, maxTokens=1000) {
         "Authorization": "Bearer " + key
       },
       body: JSON.stringify({
-        model:"llama-3.3-70b",
+        model:"openai/gpt-oss-120b",
         max_tokens: maxTokens,
         messages:[
           {role:"system", content:"You are a Principal Cyber Risk and Compliance Consultant under AI-PCRAF v1.0 for Indian BFSI IT Audit. Produce precise audit-ready outputs anchored to RBI, CERT-In, DPDP Act, NCIIPC, ReBIT, IFTAS. Tag every regulatory citation [VT]. Never fabricate citations."},
