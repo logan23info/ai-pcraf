@@ -197,6 +197,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
     <div class="nav-item" onclick="showTab('controls')" id="nav-controls">&#9783; Control Matrix</div>
     <div class="nav-item" onclick="showTab('truth')" id="nav-truth">&#9776; Truth Table</div>
     <div class="nav-item" onclick="showTab('blindspots')" id="nav-blindspots">&#9888; Blind Spots</div>
+    <div class="nav-item" onclick="showTab('dossier')" id="nav-dossier">&#9670; Dossier</div>
     <div class="nav-item" onclick="showTab('export')" id="nav-export">&#8681; Export</div>
   </nav>
   <div id="sidebar-footer">
@@ -422,7 +423,52 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       </div>
     </div>
 
-    <!-- TAB 5: EXPORT -->
+    <!-- TAB 5: DOSSIER -->
+    <div class="tab-panel" id="tab-dossier">
+      <div class="section-header">
+        <h2>Regulatory dossier — live fetch engine</h2>
+        <p>Run all 6 regulatory fetches server-side. Results stored in Supabase dossier_log. Controls with codex refs older than the last fetch are flagged [DRIFT-RISK].</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Fetch controls</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="dossier-run-btn" onclick="runAllFetches()">Run all 6 fetches</button>
+          <button class="btn btn-secondary" onclick="loadDossierHistory()">Load fetch history</button>
+          <span id="dossier-summary" style="font-size:12px;color:var(--text-muted)"></span>
+        </div>
+      </div>
+      <div class="ai-spinner" id="dossier-spinner"><div class="spinner"></div> Fetching regulatory sources...</div>
+      <div id="dossier-results" style="display:none">
+        <div class="tbl-wrap" style="margin-top:16px">
+          <table>
+            <thead>
+              <tr>
+                <th>Fetch ID</th>
+                <th>Source</th>
+                <th>Status</th>
+                <th>Amendment?</th>
+                <th>Summary</th>
+                <th>Fetched at</th>
+              </tr>
+            </thead>
+            <tbody id="dossier-tbody"></tbody>
+          </table>
+        </div>
+        <div id="dossier-amendment-box" style="display:none;margin-top:12px;padding:12px 16px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;font-size:13px;color:#92400E"></div>
+        <div id="dossier-drift-box" style="display:none;margin-top:8px;padding:12px 16px;background:#FEE2E2;border:1px solid #FECACA;border-radius:6px;font-size:13px;color:var(--risk-critical)"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">Fetch history (last 10 per source)</div>
+        <div class="tbl-wrap" style="margin-top:0">
+          <table>
+            <thead><tr><th>Fetch ID</th><th>Status</th><th>Amendment</th><th>Summary</th><th>When</th></tr></thead>
+            <tbody id="dossier-history-tbody"><tr><td colspan="5" style="color:var(--text-muted);font-size:12px">Click Load fetch history to view</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: EXPORT -->
     <div class="tab-panel" id="tab-export">
       <div class="section-header"><h2>Export &amp; backup</h2><p>Download your control matrix and framework data.</p></div>
       <div class="export-card"><div class="export-info"><h3>Full framework export (JSON)</h3><p>All controls, entity profile — use to migrate to future versions.</p></div><button class="btn btn-primary" onclick="exportJSON()">Download JSON</button></div>
@@ -457,8 +503,8 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
 <script>
 // ── SUPABASE INIT ──────────────────────────────────────────────────────────
 // Replace these two values after creating your Supabase project
-var SUPABASE_URL  = 'https://phpbsexodxwqudmpydks.supabase.co';
-var SUPABASE_ANON = 'sb_publishable_X45TZfJzy5fY3FYLQVYTRQ_WjJK0qKa';
+var SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+var SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 var currentUser = null;
@@ -565,8 +611,8 @@ async function callAPI(prompt, maxTokens) {
 }
 
 // ── TAB NAVIGATION ────────────────────────────────────────────────────────
-var TABS   = ['entity','controls','truth','blindspots','export'];
-var TITLES = { entity:'Entity Profiler', controls:'Control Matrix Builder', truth:'Truth Table — Incident Classifier', blindspots:'Blind Spot Register', export:'Export & Backup' };
+var TABS   = ['entity','controls','truth','blindspots','dossier','export'];
+var TITLES = { entity:'Entity Profiler', controls:'Control Matrix Builder', truth:'Truth Table — Incident Classifier', blindspots:'Blind Spot Register', dossier:'Regulatory Dossier — Live Fetch Engine', export:'Export & Backup' };
 function showTab(name) {
   TABS.forEach(function(t) {
     document.getElementById('tab-'+t).classList.toggle('active', t===name);
@@ -1013,6 +1059,175 @@ function updateStats() {
   document.getElementById('stat-inferred').textContent   = controls.filter(function(c){return c.source_status==='I';}).length;
   document.getElementById('stat-unverified').textContent = controls.filter(function(c){return c.source_status==='U'||c.source_status==='FR';}).length;
 }
+
+// ── DOSSIER — M3 LIVE FETCH ENGINE ───────────────────────────────────────
+var lastFetchResults = [];
+
+async function runAllFetches() {
+  if (!currentUser) return;
+  document.getElementById('dossier-run-btn').disabled = true;
+  document.getElementById('dossier-spinner').classList.add('visible');
+  document.getElementById('dossier-results').style.display = 'none';
+  document.getElementById('dossier-summary').textContent = '';
+
+  try {
+    var res = await fetch('/api/fetch-regulatory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fetchIds: ['FETCH-01','FETCH-02','FETCH-03','FETCH-04','FETCH-05','FETCH-06'] })
+    });
+    var data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Fetch endpoint error');
+
+    lastFetchResults = data.results || [];
+    var summary = data.summary || {};
+
+    // Save each result to Supabase dossier_log
+    var logRows = lastFetchResults.map(function(r) {
+      return {
+        user_id:            currentUser.id,
+        fetch_id:           r.id,
+        url:                r.url,
+        status:             r.status,
+        result_summary:     r.result_summary,
+        amendment_detected: r.amendment_detected,
+        amendment_note:     r.amendment_note || ''
+      };
+    });
+    await sb.from('dossier_log').insert(logRows);
+
+    // Render results table
+    renderDossierResults(lastFetchResults);
+
+    // Summary pill
+    document.getElementById('dossier-summary').textContent =
+      summary.fetched + '/' + summary.total + ' fetched  |  ' +
+      summary.failed + ' failed  |  ' +
+      summary.amendments_found + ' amendment signals';
+
+    // Check controls for drift
+    checkControlDrift(lastFetchResults);
+
+  } catch(e) {
+    document.getElementById('dossier-summary').textContent = 'Error: ' + e.message;
+  } finally {
+    document.getElementById('dossier-spinner').classList.remove('visible');
+    document.getElementById('dossier-run-btn').disabled = false;
+    document.getElementById('dossier-results').style.display = 'block';
+  }
+}
+
+function renderDossierResults(results) {
+  var tbody = document.getElementById('dossier-tbody');
+  tbody.innerHTML = results.map(function(r) {
+    var statusTag = r.status === 'FETCHED'
+      ? '<span class="tag tag-v">[V]</span>'
+      : '<span class="tag tag-fr">[FETCH-FAILED]</span>';
+    var amendTag = r.amendment_detected
+      ? '<span class="tag tag-i">[AMENDMENT]</span>'
+      : '<span style="color:var(--text-muted);font-size:11px">None</span>';
+    return '<tr>' +
+      '<td class="mono">' + r.id + '</td>' +
+      '<td style="font-size:11px;font-weight:600">' + r.label + '</td>' +
+      '<td>' + statusTag + '</td>' +
+      '<td>' + amendTag + '</td>' +
+      '<td class="wrap" style="font-size:11px">' + (r.result_summary || '—') + '</td>' +
+      '<td style="font-size:11px;white-space:nowrap">' + new Date().toLocaleString('en-IN') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  // Amendment box
+  var amendments = results.filter(function(r) { return r.amendment_detected; });
+  var amendBox = document.getElementById('dossier-amendment-box');
+  if (amendments.length) {
+    amendBox.style.display = 'block';
+    amendBox.innerHTML = '<strong>&#9888; Amendment signals detected (' + amendments.length + '):</strong><br>' +
+      amendments.map(function(r) {
+        return '<br><strong>' + r.id + ':</strong> ' + r.amendment_note;
+      }).join('');
+  } else {
+    amendBox.style.display = 'none';
+  }
+}
+
+function checkControlDrift(fetchResults) {
+  var failedFetches = fetchResults.filter(function(r) { return r.status === 'FETCH-FAILED'; });
+  var amendmentFetches = fetchResults.filter(function(r) { return r.amendment_detected; });
+  var driftBox = document.getElementById('dossier-drift-box');
+
+  if (!controls.length) { driftBox.style.display = 'none'; return; }
+
+  var driftControls = [];
+
+  // Flag controls whose codex ref matches a source that returned amendment signal
+  controls.forEach(function(c) {
+    var ref = (c.codex_ref || '').toLowerCase();
+    var isDrift = false;
+    var reason = '';
+
+    if ((ref.includes('rbi') || ref.includes('md')) && amendmentFetches.find(function(f){ return f.id==='FETCH-01'; })) {
+      isDrift = true; reason = 'RBI MD amendment signal detected — re-verify citation';
+    }
+    if (ref.includes('cert-in') && amendmentFetches.find(function(f){ return f.id==='FETCH-02'; })) {
+      isDrift = true; reason = 'CERT-In amendment signal detected — re-verify citation';
+    }
+    if (ref.includes('dpdp') && amendmentFetches.find(function(f){ return f.id==='FETCH-03'; })) {
+      isDrift = true; reason = 'DPDP Rules signal detected — BS-01 may be resolvable, re-verify';
+    }
+    if (ref.includes('rebit') && amendmentFetches.find(function(f){ return f.id==='FETCH-04'; })) {
+      isDrift = true; reason = 'ReBIT version signal detected — re-verify citation';
+    }
+    // Failed fetches — mark as unverifiable
+    if ((ref.includes('nciipc')) && failedFetches.find(function(f){ return f.id==='FETCH-05'; })) {
+      isDrift = true; reason = 'NCIIPC fetch failed — citation unverifiable, BS-04 remains active';
+    }
+    if ((ref.includes('iftas') || ref.includes('sfms')) && failedFetches.find(function(f){ return f.id==='FETCH-06'; })) {
+      isDrift = true; reason = 'IFTAS fetch failed — citation unverifiable, BS-08 remains active';
+    }
+    if (isDrift) driftControls.push({ id: c.id, reason: reason });
+  });
+
+  if (driftControls.length) {
+    driftBox.style.display = 'block';
+    driftBox.innerHTML = '<strong>[DRIFT-RISK] ' + driftControls.length + ' control(s) require re-verification:</strong><br>' +
+      driftControls.map(function(d) {
+        return '<br><span class="mono">' + d.id + '</span> — ' + d.reason;
+      }).join('');
+  } else {
+    driftBox.style.display = 'none';
+  }
+}
+
+async function loadDossierHistory() {
+  if (!currentUser) return;
+  var res = await sb.from('dossier_log')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('fetched_at', { ascending: false })
+    .limit(60);
+  if (res.error || !res.data || !res.data.length) {
+    document.getElementById('dossier-history-tbody').innerHTML =
+      '<tr><td colspan="5" style="color:var(--text-muted);font-size:12px">No fetch history found — run fetches first</td></tr>';
+    return;
+  }
+  document.getElementById('dossier-history-tbody').innerHTML = res.data.map(function(r) {
+    var statusTag = r.status === 'FETCHED'
+      ? '<span class="tag tag-v">[V]</span>'
+      : '<span class="tag tag-fr">[FAILED]</span>';
+    var amendTag = r.amendment_detected
+      ? '<span class="tag tag-i">[AMEND]</span>'
+      : '—';
+    return '<tr>' +
+      '<td class="mono">' + r.fetch_id + '</td>' +
+      '<td>' + statusTag + '</td>' +
+      '<td>' + amendTag + '</td>' +
+      '<td class="wrap" style="font-size:11px">' + (r.result_summary || '—').substring(0, 120) + '</td>' +
+      '<td style="font-size:11px;white-space:nowrap">' + new Date(r.fetched_at).toLocaleString('en-IN') + '</td>' +
+      '</tr>';
+  }).join('');
+  showToast('Fetch history loaded — ' + res.data.length + ' records');
+}
+
 </script>
 </body>
 </html>
