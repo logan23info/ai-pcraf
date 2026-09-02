@@ -170,11 +170,11 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       <button class="auth-tab" id="tab-signup-btn" onclick="switchAuth('signup')">Sign up</button>
     </div>
     <div class="form-group" style="margin-bottom:12px">
-      <label>Email</label>
+      <label for="auth-email">Email</label>
       <input type="email" id="auth-email" placeholder="auditor@yourfirm.com">
     </div>
     <div class="form-group" style="margin-bottom:4px">
-      <label>Password</label>
+      <label for="auth-password">Password</label>
       <input type="password" id="auth-password" placeholder="minimum 6 characters">
     </div>
     <div id="auth-err" class="auth-err"></div>
@@ -233,8 +233,8 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       <div class="card">
         <div class="card-title">Entity details</div>
         <div class="form-grid">
-          <div class="form-group"><label>Entity name</label><input type="text" id="ep-name" placeholder="e.g. ABC Small Finance Bank Ltd"></div>
-          <div class="form-group"><label>Entity type</label>
+          <div class="form-group"><label for="ep-name">Entity name</label><input type="text" id="ep-name" placeholder="e.g. ABC Small Finance Bank Ltd"></div>
+          <div class="form-group"><label for="ep-type">Entity type</label>
             <select id="ep-type">
               <option value="">— select —</option>
               <optgroup label="Banking">
@@ -251,8 +251,8 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
               </optgroup>
             </select>
           </div>
-          <div class="form-group"><label>Core banking system</label><input type="text" id="ep-cbs" placeholder="e.g. Finacle, Flexcube, BaNCS"></div>
-          <div class="form-group"><label>Cloud footprint</label>
+          <div class="form-group"><label for="ep-cbs">Core banking system</label><input type="text" id="ep-cbs" placeholder="e.g. Finacle, Flexcube, BaNCS"></div>
+          <div class="form-group"><label for="ep-cloud">Cloud footprint</label>
             <select id="ep-cloud">
               <option value="none">No cloud / on-premises only</option>
               <option value="private">Private cloud</option>
@@ -260,9 +260,9 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
               <option value="public">Public cloud (AWS/Azure/GCP)</option>
             </select>
           </div>
-          <div class="form-group"><label>Total IT assets (approx)</label><input type="text" id="ep-assets" placeholder="e.g. 250 servers, 1200 endpoints"></div>
-          <div class="form-group"><label>Audit period</label><input type="text" id="ep-period" placeholder="e.g. FY 2025-26, Q2"></div>
-          <div class="form-group span2"><label>Key risk areas</label><textarea id="ep-risks" placeholder="e.g. Recent CBS migration, new UPI integration, third-party lending partnership..."></textarea></div>
+          <div class="form-group"><label for="ep-assets">Total IT assets (approx)</label><input type="text" id="ep-assets" placeholder="e.g. 250 servers, 1200 endpoints"></div>
+          <div class="form-group"><label for="ep-period">Audit period</label><input type="text" id="ep-period" placeholder="e.g. FY 2025-26, Q2"></div>
+          <div class="form-group span2"><label for="ep-risks">Key risk areas</label><textarea id="ep-risks" placeholder="e.g. Recent CBS migration, new UPI integration, third-party lending partnership..."></textarea></div>
         </div>
         <div class="btn-row">
           <button class="btn btn-primary" id="ep-generate-btn" onclick="generateEntityProfile()">Generate profile</button>
@@ -283,7 +283,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       <div class="card">
         <div class="card-title">Generate new control</div>
         <div class="form-grid">
-          <div class="form-group"><label>Assurance domain</label>
+          <div class="form-group"><label for="cm-domain">Assurance domain</label>
             <select id="cm-domain">
               <option value="AD-01">AD-01 — IT Internal Audit &amp; Attestation</option>
               <option value="AD-02">AD-02 — ERP &amp; Core Banking Security</option>
@@ -294,7 +294,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
               <option value="AD-07">AD-07 — Data Localisation &amp; Privacy</option>
             </select>
           </div>
-          <div class="form-group"><label>Control domain</label>
+          <div class="form-group"><label for="cm-ctrl-domain">Control domain</label>
             <select id="cm-ctrl-domain">
               <option value="CBS">CBS — Core Banking System</option>
               <option value="CLD">CLD — Cloud Infrastructure</option>
@@ -307,15 +307,15 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
               <option value="AUD">AUD — Audit &amp; Attestation</option>
             </select>
           </div>
-          <div class="form-group"><label>Subsystem</label><input type="text" id="cm-subsystem" placeholder="e.g. Finacle CBS, Azure AD, UPI Switch"></div>
-          <div class="form-group"><label>Entity tier</label>
+          <div class="form-group"><label for="cm-subsystem">Subsystem</label><input type="text" id="cm-subsystem" placeholder="e.g. Finacle CBS, Azure AD, UPI Switch"></div>
+          <div class="form-group"><label for="cm-tier">Entity tier</label>
             <select id="cm-tier">
               <option value="SCB">SCB</option><option value="SFB">SFB</option>
               <option value="NBFC-ML">NBFC-ML</option><option value="NBFC-UL">NBFC-UL</option>
               <option value="NBFC-BL">NBFC-BL</option><option value="RRB">RRB</option>
             </select>
           </div>
-          <div class="form-group span2"><label>Control focus</label><textarea id="cm-focus" placeholder="e.g. Privileged access to CBS production — separation of duties between DBA and application admin roles..."></textarea></div>
+          <div class="form-group span2"><label for="cm-focus">Control focus</label><textarea id="cm-focus" placeholder="e.g. Privileged access to CBS production — separation of duties between DBA and application admin roles..."></textarea></div>
         </div>
         <div class="btn-row"><button class="btn btn-primary" onclick="generateControl()">Generate control object</button></div>
       </div>
@@ -344,14 +344,14 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       <div class="card">
         <div class="card-title">Incident classifier</div>
         <div class="form-grid">
-          <div class="form-group"><label>Incident description</label><input type="text" id="tt-incident" placeholder="e.g. Ransomware detected on CBS production server"></div>
-          <div class="form-group"><label>Involves PII?</label>
+          <div class="form-group"><label for="tt-incident">Incident description</label><input type="text" id="tt-incident" placeholder="e.g. Ransomware detected on CBS production server"></div>
+          <div class="form-group"><label for="tt-pii">Involves PII?</label>
             <select id="tt-pii"><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select>
           </div>
-          <div class="form-group"><label>Involves CII asset?</label>
+          <div class="form-group"><label for="tt-cii">Involves CII asset?</label>
             <select id="tt-cii"><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown / presumptive (BS-04)</option></select>
           </div>
-          <div class="form-group"><label>Involves financial system?</label>
+          <div class="form-group"><label for="tt-financial">Involves financial system?</label>
             <select id="tt-financial"><option value="yes">Yes</option><option value="no">No</option></select>
           </div>
         </div>
@@ -788,25 +788,44 @@ async function generateControl() {
     ? 'Entity: ' + document.getElementById('ep-name').value + ' (' + document.getElementById('ep-type').value + '). CBS: ' + (document.getElementById('ep-cbs').value || 'unknown') + '.'
     : 'Tier: ' + tier + '.';
 
-  var prompt = 'You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v2.0.\n' +
-    entityCtx + '\nControl focus: ' + focus + '\nAssurance domain: ' + domain +
-    '\nControl domain: ' + ctrlDomain + '\nSubsystem: ' + (subsystem||'(derive from focus)') +
-    '\nEntity tier: ' + tier + '\nControl ID: ' + controlId + '\n\n' +
-    'Respond ONLY with a valid JSON object. No preamble, no markdown fences.\n' +
-    '{"control_id":"' + controlId + '","control_name":"","assurance_domain":"' + domain + '",' +
-    '"subsystem":"","tier_applicability":[],"primary_codex_ref":"","secondary_codex_ref":"",' +
-    '"source_truth_status":"VERIFIED-TRAINING","risk_description":"","risk_rating":"High",' +
-    '"inherent_risk":"","residual_risk":"","control_type":"Preventive","control_mode":"Hybrid",' +
-    '"ai_testing_procedure":"","manual_procedure":"","testing_frequency":"Quarterly",' +
-    '"evidence_artifacts":"","drift_indicator":"","drift_threshold":"",' +
-    '"reportable_to":[],"reporting_sla":"","fabrication_flag":"VT",' +
-    '"blind_spot_flag":false,"blind_spot_note":"",' +
-    '"cot_trigger":"","cot_codex":"","cot_tier":"","cot_design":"","cot_evidence":"","cot_failure":"",' +
-    '"fieldwork_test_steps":"","sample_size":"","evidence_request_list":""}';
+  var prompt = 'You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v2.0 for Indian BFSI IT Audit.' +
+    ' Regulatory scope: RBI IT Gov MD 2023, CERT-In Directions 2022, DPDP Act 2023, NCIIPC, ReBIT, IFTAS.' +
+    ' Tag all citations [VT].\n\n' +
+    'CONTEXT\n' +
+    entityCtx + '\n' +
+    'Control ID: ' + controlId + '\n' +
+    'Assurance domain: ' + domain + '\n' +
+    'Control domain: ' + ctrlDomain + '\n' +
+    'Subsystem: ' + (subsystem || 'derive from control focus') + '\n' +
+    'Entity tier: ' + tier + '\n' +
+    'Control focus: ' + focus + '\n\n' +
+    'INSTRUCTION\n' +
+    'Return ONLY a raw JSON object. No markdown. No backticks. No explanation before or after.\n' +
+    'The JSON must contain exactly these string fields:\n' +
+    'control_id, control_name, assurance_domain, subsystem, primary_codex_ref, secondary_codex_ref,' +
+    ' source_truth_status, risk_description, risk_rating, inherent_risk, residual_risk,' +
+    ' control_type, control_mode, testing_frequency, ai_testing_procedure, manual_procedure,' +
+    ' evidence_artifacts, drift_indicator, drift_threshold, reporting_sla,' +
+    ' fabrication_flag, blind_spot_note,' +
+    ' cot_trigger, cot_codex, cot_tier, cot_design, cot_evidence, cot_failure,' +
+    ' fieldwork_test_steps, sample_size, evidence_request_list\n' +
+    'And these non-string fields:\n' +
+    ' tier_applicability (array of strings), reportable_to (array of strings), blind_spot_flag (boolean)\n\n' +
+    'risk_rating must be one of: Critical, High, Medium, Low\n' +
+    'control_type must be one of: Preventive, Detective, Corrective\n' +
+    'control_mode must be one of: Automated, Manual, Hybrid\n' +
+    'source_truth_status must be: VERIFIED-TRAINING\n' +
+    'fabrication_flag must be: VT\n' +
+    'Start your response with { and end with }';
 
   try {
     var raw   = await callAPI(prompt, 1200);
-    var clean = raw.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
+    // Aggressively strip any fences or preamble — find first { and last }
+    var firstBrace = raw.indexOf('{');
+    var lastBrace  = raw.lastIndexOf('}');
+    var clean = (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace)
+      ? raw.substring(firstBrace, lastBrace + 1)
+      : raw.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
     var p;
     try { p = JSON.parse(clean); }
     catch(pe) {
