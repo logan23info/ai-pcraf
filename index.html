@@ -502,14 +502,33 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
 
 <script>
 // ── SUPABASE INIT ──────────────────────────────────────────────────────────
-// Replace these two values after creating your Supabase project
-var SUPABASE_URL  = 'YOUR_SUPABASE_URL';
-var SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
-var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
+// Config is fetched from /api/config at runtime — no secrets in source code
+// Security is enforced by Supabase Row Level Security on all tables
+var sb          = null;
 var currentUser = null;
 var controls    = [];
 var currentEntityId = null;
+
+async function initSupabase() {
+  try {
+    var res = await fetch('/api/config');
+    if (!res.ok) throw new Error('Config endpoint returned ' + res.status);
+    var cfg = await res.json();
+    if (cfg.error) throw new Error(cfg.error);
+    sb = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnon);
+    // Check existing session after client is ready
+    var session = await sb.auth.getSession();
+    if (session.data && session.data.session && session.data.session.user) {
+      currentUser = session.data.session.user;
+      launchApp();
+    }
+  } catch(e) {
+    document.getElementById('auth-err').textContent = 'Configuration error: ' + e.message + '. Check Vercel environment variables.';
+  }
+}
+
+// Run on page load
+initSupabase();
 
 var CHECKLIST_ITEMS = [
   'Scaffolding: all six scaffold layers addressed?',
@@ -589,13 +608,7 @@ async function signOut() {
   document.getElementById('auth-password').value = '';
 }
 
-// Check existing session on load
-sb.auth.getSession().then(function(res) {
-  if (res.data && res.data.session && res.data.session.user) {
-    currentUser = res.data.session.user;
-    launchApp();
-  }
-});
+// Session check handled in initSupabase()
 
 // ── API CALL — via Vercel serverless function ─────────────────────────────
 async function callAPI(prompt, maxTokens) {
