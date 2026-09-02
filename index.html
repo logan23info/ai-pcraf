@@ -939,9 +939,20 @@ async function generateControl() {
       // Reload from Supabase so table always reflects true DB state
       await loadControlsFromDB();
       showToast(controlId + ' saved — ' + controls.length + ' total controls');
+      // Clear only focus field — keep domain selectors for next control
+      document.getElementById('cm-focus').value = '';
+      document.getElementById('cm-subsystem').value = '';
+      // Show next-control prompt in output box
+      var out = document.getElementById('cm-output');
+      out.textContent = out.textContent + '\n\n─────────────────────────────────────────────────\n' +
+        controlId + ' saved to Supabase successfully.\n' +
+        'Table updated below. To generate the next control:\n' +
+        '1. Change domain selectors if needed\n' +
+        '2. Enter new subsystem and control focus\n' +
+        '3. Click Generate control object';
       // Scroll table into view
       var wrap = document.getElementById('control-table-wrap');
-      if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   } catch(e) {
     document.getElementById('cm-output').textContent = 'Error: ' + e.message;
