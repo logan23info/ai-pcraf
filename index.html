@@ -651,7 +651,8 @@ function showTab(name) {
     document.getElementById('nav-'+t).classList.toggle('active', t===name);
   });
   document.getElementById('topbar-title').textContent = TITLES[name];
-  if (name === 'export') updateStats();
+  if (name === 'export')   updateStats();
+  if (name === 'controls') loadControlsFromDB();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
@@ -767,7 +768,9 @@ async function loadEntitiesFromDB() {
 
 // ── CONTROL MATRIX ────────────────────────────────────────────────────────
 function domainSeq(ctrlDomain) {
-  return controls.filter(function(c) { return c.ctrl_domain === ctrlDomain; }).length + 1;
+  // Count existing controls for this domain from in-memory array (kept in sync with DB)
+  var existing = controls.filter(function(c) { return c.ctrl_domain === ctrlDomain; }).length;
+  return existing + 1;
 }
 
 async function generateControl() {
@@ -819,19 +822,27 @@ async function generateControl() {
     'Start your response with { and end with }';
 
   try {
-    var raw   = await callAPI(prompt, 1200);
-    // Aggressively strip any fences or preamble — find first { and last }
-    var firstBrace = raw.indexOf('{');
-    var lastBrace  = raw.lastIndexOf('}');
-    var clean = (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace)
-      ? raw.substring(firstBrace, lastBrace + 1)
-      : raw.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
-    var p;
-    try { p = JSON.parse(clean); }
-    catch(pe) {
-      document.getElementById('cm-output').textContent = '[JSON parse error]\n\n' + raw;
-      document.getElementById('cm-output').classList.add('visible');
-      return;
+    // Auto-retry once on parse failure — Groq occasionally adds preamble on first call
+    var p = null;
+    var lastRaw = '';
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      var raw = await callAPI(prompt, 1200);
+      lastRaw = raw;
+      var firstBrace = raw.indexOf('{');
+      var lastBrace  = raw.lastIndexOf('}');
+      var clean = (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace)
+        ? raw.substring(firstBrace, lastBrace + 1)
+        : raw.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
+      try { p = JSON.parse(clean); break; }
+      catch(pe) {
+        if (attempt === 2) {
+          document.getElementById('cm-output').textContent = '[JSON parse error after 2 attempts]\n\n' + raw;
+          document.getElementById('cm-output').classList.add('visible');
+          return;
+        }
+        // Brief pause before retry
+        await new Promise(function(r){ setTimeout(r, 800); });
+      }
     }
 
     var lines = [
@@ -921,18 +932,16 @@ async function generateControl() {
       raw_output: lines.join('\n')
     };
     var dbRes = await sb.from('controls').insert(dbRow);
-    if (dbRes.error) { showToast('DB save failed: ' + dbRes.error.message); }
-    else {
-      var ctrl = { id: p.control_id, ctrl_domain: ctrlDomain, ad_domain: p.assurance_domain,
-        subsystem: p.subsystem, tier: tier, risk_rating: p.risk_rating,
-        codex_ref: p.primary_codex_ref, ctrl_type: p.control_type,
-        evidence: p.evidence_artifacts, sla: p.reporting_sla,
-        source_status: p.source_truth_status === 'VERIFIED-TRAINING' ? 'VT' : p.source_truth_status === 'INFERRED' ? 'I' : 'U',
-        created: new Date().toISOString()
-      };
-      controls.push(ctrl);
-      renderControlTable();
-      showToast(controlId + ' saved to Supabase');
+    if (dbRes.error) {
+      showToast('DB save failed: ' + dbRes.error.message);
+      console.error('DB insert error:', dbRes.error);
+    } else {
+      // Reload from Supabase so table always reflects true DB state
+      await loadControlsFromDB();
+      showToast(controlId + ' saved — ' + controls.length + ' total controls');
+      // Scroll table into view
+      var wrap = document.getElementById('control-table-wrap');
+      if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   } catch(e) {
     document.getElementById('cm-output').textContent = 'Error: ' + e.message;
