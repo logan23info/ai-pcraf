@@ -1071,7 +1071,6 @@ function exportJSON() {
   showToast('JSON exported');
 }
 async function exportExcel() {
-  if (!controls.length) { showToast('No controls to export — generate controls first'); return; }
   var btn = document.getElementById('excel-btn');
   var statusEl = document.getElementById('excel-status');
   btn.disabled = true;
@@ -1162,6 +1161,14 @@ async function exportExcel() {
           };
         });
       }
+    }
+
+    if (!fullControls.length) {
+      statusEl.textContent = '';
+      showToast('No controls found in database — generate controls first');
+      btn.disabled = false;
+      btn.textContent = 'Download RCM (.xlsx)';
+      return;
     }
 
     statusEl.textContent = 'Sending to export engine...';
