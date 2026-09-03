@@ -17,6 +17,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'prompt is required' });
   }
 
+  // D-01/D-02 fix: enforce minimum 2500 tokens — full CONTROL_OBJECT + CoT + fieldwork pack
+  // requires ~1800-2200 tokens; 2500 gives safe headroom. Frontend hint is advisory only.
+  const resolvedTokens = Math.max(maxTokens || 2500, 2500);
+
   try {
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -26,7 +30,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'openai/gpt-oss-120b',
-        max_tokens: maxTokens || 1200,
+        max_tokens: resolvedTokens,
         messages: [
           {
             role: 'system',
