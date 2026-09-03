@@ -5,158 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI-PCRAF v2.0 — Cyber Risk Assurance Framework</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --navy:#0F1E3C;--navy-mid:#1A2F55;--navy-light:#243D6E;
-  --accent:#2563EB;--accent-dim:#1D4ED8;
-  --white:#FFFFFF;--surface:#F7F8FA;--border:#E2E5EA;--border-strong:#C8CDD6;
-  --text:#111827;--text-muted:#6B7280;--text-light:#9CA3AF;
-  --mono:'Courier New',Courier,monospace;
-  --tag-v-bg:#D1FAE5;--tag-v:#065F46;
-  --tag-vt-bg:#DBEAFE;--tag-vt:#1E40AF;
-  --tag-i-bg:#FEF3C7;--tag-i:#92400E;
-  --tag-u-bg:#F3F4F6;--tag-u:#374151;
-  --tag-fr-bg:#FEE2E2;--tag-fr:#991B1B;
-  --tag-bs-bg:#EDE9FE;--tag-bs:#5B21B6;
-  --risk-critical:#991B1B;--risk-high:#C2410C;--risk-medium:#B45309;--risk-low:#065F46;
-}
-body{display:flex;height:100vh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--surface)}
-
-/* AUTH SCREEN */
-#auth-screen{display:flex;align-items:center;justify-content:center;width:100%;height:100vh;background:var(--navy)}
-.auth-box{background:var(--white);border-radius:12px;padding:36px;width:360px}
-.auth-box .brand{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:4px}
-.auth-box .sub{font-size:12px;color:var(--text-muted);margin-bottom:24px}
-.auth-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
-.auth-tab{flex:1;padding:8px;text-align:center;font-size:13px;cursor:pointer;background:var(--surface);color:var(--text-muted);border:none}
-.auth-tab.active{background:var(--accent);color:var(--white)}
-.auth-err{font-size:12px;color:var(--risk-critical);margin-top:8px;min-height:18px}
-.auth-msg{font-size:12px;color:var(--tag-v);margin-top:8px;min-height:18px}
-
-/* SIDEBAR */
-#sidebar{width:220px;min-width:220px;background:var(--navy);display:flex;flex-direction:column;height:100vh;overflow:hidden}
-#sidebar-header{padding:20px 18px 16px;border-bottom:1px solid var(--navy-light)}
-.brand-s{font-size:13px;font-weight:700;color:var(--white)}
-.version-s{font-size:11px;color:#7B93C4;margin-top:3px}
-.sub-s{font-size:10px;color:#5A729A;margin-top:2px}
-nav{padding:12px 0;flex:1}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;color:#A8C0E8;font-size:13px;border-left:3px solid transparent;transition:background .15s,color .15s}
-.nav-item:hover{background:var(--navy-mid);color:var(--white)}
-.nav-item.active{background:var(--navy-mid);color:var(--white);border-left-color:var(--accent)}
-#sidebar-footer{padding:14px 18px;border-top:1px solid var(--navy-light)}
-#user-email{font-size:11px;color:#7B93C4;margin-bottom:8px;word-break:break-all}
-#signout-btn{width:100%;padding:6px;background:var(--navy-light);color:#A8C0E8;border:none;border-radius:4px;font-size:11px;cursor:pointer}
-#signout-btn:hover{background:#2D4A7A;color:var(--white)}
-
-/* MAIN */
-#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-#topbar{padding:12px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;min-height:52px}
-#topbar-title{font-size:15px;font-weight:600}
-#topbar-meta{font-size:12px;color:var(--text-muted);display:flex;gap:16px;align-items:center}
-.checklist-pill{font-size:11px;padding:3px 10px;border-radius:20px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-muted)}
-.checklist-pill:hover{border-color:var(--accent);color:var(--accent)}
-#content{flex:1;overflow-y:auto;padding:24px}
-.tab-panel{display:none}
-.tab-panel.active{display:block}
-.section-header{margin-bottom:20px}
-.section-header h2{font-size:17px;font-weight:600}
-.section-header p{font-size:13px;color:var(--text-muted);margin-top:4px}
-
-/* FORMS */
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
-.form-group{display:flex;flex-direction:column;gap:5px}
-.form-group.span2{grid-column:span 2}
-label{font-size:12px;font-weight:500;color:var(--text-muted)}
-input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:5px;font-size:13px;color:var(--text);background:var(--white);font-family:inherit;transition:border .15s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
-textarea{resize:vertical;min-height:70px}
-
-/* BUTTONS */
-.btn{padding:8px 16px;border-radius:5px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:background .15s}
-.btn-primary{background:var(--accent);color:var(--white)}
-.btn-primary:hover{background:var(--accent-dim)}
-.btn-primary:disabled{background:#93BBFD;cursor:not-allowed}
-.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--border-strong)}
-.btn-danger{background:#FEE2E2;color:var(--risk-critical);border:1px solid #FECACA}
-.btn-row{display:flex;gap:10px;align-items:center;margin-top:16px}
-
-/* TAGS */
-.tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600;font-family:var(--mono)}
-.tag-v{background:var(--tag-v-bg);color:var(--tag-v)}
-.tag-vt{background:var(--tag-vt-bg);color:var(--tag-vt)}
-.tag-i{background:var(--tag-i-bg);color:var(--tag-i)}
-.tag-u{background:var(--tag-u-bg);color:var(--tag-u)}
-.tag-fr{background:var(--tag-fr-bg);color:var(--tag-fr)}
-.tag-bs{background:var(--tag-bs-bg);color:var(--tag-bs)}
-.risk-critical{color:var(--risk-critical);font-weight:600}
-.risk-high{color:var(--risk-high);font-weight:600}
-.risk-medium{color:var(--risk-medium);font-weight:600}
-.risk-low{color:var(--risk-low);font-weight:600}
-.tier-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:#DBEAFE;color:#1E3A8A}
-
-/* TABLES */
-.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;margin-top:16px}
-table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:#F1F3F7;padding:9px 12px;text-align:left;font-weight:600;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#F7F9FC}
-td.mono{font-family:var(--mono);font-size:11px}
-td.wrap{white-space:normal;max-width:200px;word-break:break-word}
-.tt-cell-yes{background:#D1FAE5;color:#065F46;font-weight:600;text-align:center}
-.tt-cell-no{color:var(--text-light);text-align:center}
-.tt-cell-dep{background:#FEF3C7;color:#92400E;text-align:center}
-
-/* CARDS */
-.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:14px}
-.card-title{font-size:13px;font-weight:600;margin-bottom:10px}
-.ai-output{background:#F0F4FF;border:1px solid #BFD0FE;border-radius:6px;padding:14px;margin-top:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;display:none}
-.ai-output.visible{display:block}
-.ai-spinner{display:none;align-items:center;gap:8px;color:var(--text-muted);font-size:13px;margin-top:12px}
-.ai-spinner.visible{display:flex}
-.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.header-block{background:var(--navy);color:var(--white);border-radius:6px;padding:14px 18px;margin-bottom:18px;font-family:var(--mono);font-size:11px;line-height:1.9}
-.hb-label{color:#7B93C4;display:inline-block;width:160px}
-.hb-val{color:#E2E8F0}
-.hb-val.warn{color:#FCD34D}
-
-/* BLIND SPOTS */
-.bs-row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
-.bs-row:last-child{border-bottom:none}
-.bs-id{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--tag-bs);background:var(--tag-bs-bg);padding:3px 8px;border-radius:3px;white-space:nowrap;align-self:flex-start}
-.bs-body{flex:1}
-.bs-title{font-size:13px;font-weight:600;margin-bottom:3px}
-.bs-desc,.bs-mitigation{font-size:12px;color:var(--text-muted)}
-.bs-mitigation{margin-top:4px}
-.bs-impact{font-size:11px;font-weight:600;color:var(--risk-high);margin-right:4px}
-
-/* EXPORT */
-.export-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
-.export-info h3{font-size:14px;font-weight:600;margin-bottom:4px}
-.export-info p{font-size:12px;color:var(--text-muted)}
-
-/* CHECKLIST MODAL */
-#checklist-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
-#checklist-modal.open{display:flex}
-.modal-box{background:var(--white);border-radius:10px;padding:24px;width:480px;max-height:80vh;overflow-y:auto}
-.modal-title{font-size:16px;font-weight:600;margin-bottom:16px}
-.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
-.checklist-item:last-child{border-bottom:none}
-.checklist-item input[type=checkbox]{margin-top:2px;accent-color:var(--accent)}
-.checklist-item label{cursor:pointer;flex:1}
-.checklist-item label.done{text-decoration:line-through;color:var(--text-muted)}
-
-/* TOAST */
-#toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--white);padding:10px 18px;border-radius:6px;font-size:13px;opacity:0;transition:opacity .2s;z-index:2000;pointer-events:none}
-#toast.show{opacity:1}
-
-/* DB status */
-.db-pill{font-size:11px;padding:2px 8px;border-radius:10px;background:#D1FAE5;color:#065F46}
-.db-pill.offline{background:#FEE2E2;color:#991B1B}
-</style>
+<link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 
@@ -190,7 +39,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
   <div id="sidebar-header">
     <div class="brand-s">AI-PCRAF v2.0</div>
     <div class="version-s">Cyber Risk Assurance Framework</div>
-    <div class="sub-s">Indian BFSI · IT Audit</div>
+    <div class="sub-s">Indian BFSI &middot; IT Audit</div>
   </div>
   <nav>
     <div class="nav-item active" onclick="showTab('entity')" id="nav-entity">&#9673; Entity Profiler</div>
@@ -198,6 +47,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
     <div class="nav-item" onclick="showTab('truth')" id="nav-truth">&#9776; Truth Table</div>
     <div class="nav-item" onclick="showTab('blindspots')" id="nav-blindspots">&#9888; Blind Spots</div>
     <div class="nav-item" onclick="showTab('dossier')" id="nav-dossier">&#9670; Dossier</div>
+    <div class="nav-item" onclick="showTab('daksh')" id="nav-daksh">&#9888; DAKSH</div>
     <div class="nav-item" onclick="showTab('export')" id="nav-export">&#8681; Export</div>
   </nav>
   <div id="sidebar-footer">
@@ -225,10 +75,10 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       </div>
       <div id="header-block-entity" style="display:none" class="header-block">
         <div><span class="hb-label">Framework version</span><span class="hb-val">AI-PCRAF v2.0</span></div>
-        <div><span class="hb-label">Output phase</span><span class="hb-val">Phase 1 — Entity Risk Profiling</span></div>
-        <div><span class="hb-label">Target entity tier</span><span class="hb-val" id="hb-tier">—</span></div>
-        <div><span class="hb-label">Dossier status</span><span class="hb-val warn">6 fetches pending — verify manually</span></div>
-        <div><span class="hb-label">Generated</span><span class="hb-val" id="hb-date">—</span></div>
+        <div><span class="hb-label">Output phase</span><span class="hb-val">Phase 1 &mdash; Entity Risk Profiling</span></div>
+        <div><span class="hb-label">Target entity tier</span><span class="hb-val" id="hb-tier">&mdash;</span></div>
+        <div><span class="hb-label">Dossier status</span><span class="hb-val warn">6 fetches pending &mdash; verify manually</span></div>
+        <div><span class="hb-label">Generated</span><span class="hb-val" id="hb-date">&mdash;</span></div>
       </div>
       <div class="card">
         <div class="card-title">Entity details</div>
@@ -236,18 +86,18 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
           <div class="form-group"><label for="ep-name">Entity name</label><input type="text" id="ep-name" placeholder="e.g. ABC Small Finance Bank Ltd"></div>
           <div class="form-group"><label for="ep-type">Entity type</label>
             <select id="ep-type">
-              <option value="">— select —</option>
+              <option value="">-- select --</option>
               <optgroup label="Banking">
                 <option value="SCB">Scheduled Commercial Bank (SCB)</option>
                 <option value="SFB">Small Finance Bank (SFB)</option>
                 <option value="RRB">Regional Rural Bank (RRB)</option>
                 <option value="FB">Foreign Bank (FB)</option>
               </optgroup>
-              <optgroup label="NBFC — SBR Tiers">
-                <option value="NBFC-BL">NBFC — Base Layer</option>
-                <option value="NBFC-ML">NBFC — Middle Layer</option>
-                <option value="NBFC-UL">NBFC — Upper Layer</option>
-                <option value="NBFC-TL">NBFC — Top Layer</option>
+              <optgroup label="NBFC -- SBR Tiers">
+                <option value="NBFC-BL">NBFC -- Base Layer</option>
+                <option value="NBFC-ML">NBFC -- Middle Layer</option>
+                <option value="NBFC-UL">NBFC -- Upper Layer</option>
+                <option value="NBFC-TL">NBFC -- Top Layer</option>
               </optgroup>
             </select>
           </div>
@@ -285,26 +135,26 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
         <div class="form-grid">
           <div class="form-group"><label for="cm-domain">Assurance domain</label>
             <select id="cm-domain">
-              <option value="AD-01">AD-01 — IT Internal Audit &amp; Attestation</option>
-              <option value="AD-02">AD-02 — ERP &amp; Core Banking Security</option>
-              <option value="AD-03">AD-03 — Cloud &amp; Infrastructure</option>
-              <option value="AD-04">AD-04 — Responsible AI Governance</option>
-              <option value="AD-05">AD-05 — Third-Party &amp; API Risk</option>
-              <option value="AD-06">AD-06 — Incident Response &amp; Reporting</option>
-              <option value="AD-07">AD-07 — Data Localisation &amp; Privacy</option>
+              <option value="AD-01">AD-01 -- IT Internal Audit &amp; Attestation</option>
+              <option value="AD-02">AD-02 -- ERP &amp; Core Banking Security</option>
+              <option value="AD-03">AD-03 -- Cloud &amp; Infrastructure</option>
+              <option value="AD-04">AD-04 -- Responsible AI Governance</option>
+              <option value="AD-05">AD-05 -- Third-Party &amp; API Risk</option>
+              <option value="AD-06">AD-06 -- Incident Response &amp; Reporting</option>
+              <option value="AD-07">AD-07 -- Data Localisation &amp; Privacy</option>
             </select>
           </div>
           <div class="form-group"><label for="cm-ctrl-domain">Control domain</label>
             <select id="cm-ctrl-domain">
-              <option value="CBS">CBS — Core Banking System</option>
-              <option value="CLD">CLD — Cloud Infrastructure</option>
-              <option value="API">API — API &amp; Integration</option>
-              <option value="IAM">IAM — Identity &amp; Access</option>
-              <option value="AI">AI — AI/ML Models</option>
-              <option value="INC">INC — Incident Response</option>
-              <option value="TPR">TPR — Third-Party Risk</option>
-              <option value="DLP">DLP — Data Loss Prevention</option>
-              <option value="AUD">AUD — Audit &amp; Attestation</option>
+              <option value="CBS">CBS -- Core Banking System</option>
+              <option value="CLD">CLD -- Cloud Infrastructure</option>
+              <option value="API">API -- API &amp; Integration</option>
+              <option value="IAM">IAM -- Identity &amp; Access</option>
+              <option value="AI">AI -- AI/ML Models</option>
+              <option value="INC">INC -- Incident Response</option>
+              <option value="TPR">TPR -- Third-Party Risk</option>
+              <option value="DLP">DLP -- Data Loss Prevention</option>
+              <option value="AUD">AUD -- Audit &amp; Attestation</option>
             </select>
           </div>
           <div class="form-group"><label for="cm-subsystem">Subsystem</label><input type="text" id="cm-subsystem" placeholder="e.g. Finacle CBS, Azure AD, UPI Switch"></div>
@@ -315,7 +165,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
               <option value="NBFC-BL">NBFC-BL</option><option value="RRB">RRB</option>
             </select>
           </div>
-          <div class="form-group span2"><label for="cm-focus">Control focus</label><textarea id="cm-focus" placeholder="e.g. Privileged access to CBS production — separation of duties between DBA and application admin roles..."></textarea></div>
+          <div class="form-group span2"><label for="cm-focus">Control focus</label><textarea id="cm-focus" placeholder="e.g. Privileged access to CBS production -- separation of duties between DBA and application admin roles..."></textarea></div>
         </div>
         <div class="btn-row"><button class="btn btn-primary" onclick="generateControl()">Generate control object</button></div>
       </div>
@@ -339,7 +189,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
     <div class="tab-panel" id="tab-truth">
       <div class="section-header">
         <h2>Multi-agency incident truth table</h2>
-        <p>Evaluate any incident against all four reporting obligations. HCD rule — strictest SLA governs.</p>
+        <p>Evaluate any incident against all four reporting obligations. HCD rule &mdash; strictest SLA governs.</p>
       </div>
       <div class="card">
         <div class="card-title">Incident classifier</div>
@@ -366,21 +216,21 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
           <tbody id="tt-tbody"></tbody></table>
         </div>
         <div id="tt-hcd" style="margin-top:12px;padding:12px 16px;background:#FEE2E2;border:1px solid #FECACA;border-radius:6px;font-size:13px;font-weight:600;color:var(--risk-critical)"></div>
-        <div id="tt-depends-note" style="display:none;margin-top:8px;padding:10px 14px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;font-size:12px;color:#92400E">&#9888; One or more cells are Depends — human judgment required. AI halts autonomous reporting pending confirmation.</div>
+        <div id="tt-depends-note" style="display:none;margin-top:8px;padding:10px 14px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;font-size:12px;color:#92400E">&#9888; One or more cells are Depends &mdash; human judgment required. AI halts autonomous reporting pending confirmation.</div>
         <div class="ai-spinner" id="tt-spinner" style="margin-top:12px"><div class="spinner"></div> Generating incident analysis...</div>
         <div class="ai-output" id="tt-output" style="margin-top:12px"></div>
       </div>
       <div style="margin-top:28px">
-        <div style="font-size:14px;font-weight:600;margin-bottom:12px">Mandatory truth table — all 8 incident classes</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">Mandatory truth table &mdash; all 8 incident classes</div>
         <div class="tbl-wrap">
           <table><thead><tr><th>Incident trigger</th><th>PII</th><th>CII</th><th>RBI DAKSH</th><th>CERT-In</th><th>NCIIPC</th><th>DPDP Board</th><th>Governing SLA</th></tr></thead>
           <tbody>
             <tr><td>Ransomware on CBS</td><td class="tt-cell-no">No</td><td class="tt-cell-yes">Yes</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; Immediate</td><td class="tt-cell-no">&#10007;</td><td style="font-weight:600;color:var(--risk-critical)">Immediate</td></tr>
-            <tr><td>Data breach — customer PII</td><td class="tt-cell-yes">Yes</td><td class="tt-cell-dep">Depends</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-dep">If CII</td><td class="tt-cell-yes">&#10003; Immediate</td><td style="font-weight:600;color:var(--risk-critical)">Immediate</td></tr>
-            <tr><td>API exfiltration — LSP</td><td class="tt-cell-yes">Yes</td><td class="tt-cell-no">No</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-no">&#10007;</td><td class="tt-cell-yes">&#10003; Immediate</td><td style="font-weight:600;color:var(--risk-critical)">Immediate</td></tr>
+            <tr><td>Data breach &mdash; customer PII</td><td class="tt-cell-yes">Yes</td><td class="tt-cell-dep">Depends</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-dep">If CII</td><td class="tt-cell-yes">&#10003; Immediate</td><td style="font-weight:600;color:var(--risk-critical)">Immediate</td></tr>
+            <tr><td>API exfiltration &mdash; LSP</td><td class="tt-cell-yes">Yes</td><td class="tt-cell-no">No</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-no">&#10007;</td><td class="tt-cell-yes">&#10003; Immediate</td><td style="font-weight:600;color:var(--risk-critical)">Immediate</td></tr>
             <tr><td>SFMS/INFINET disruption</td><td class="tt-cell-no">No</td><td class="tt-cell-yes">Yes</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; Immediate</td><td class="tt-cell-no">&#10007;</td><td style="font-weight:600;color:var(--risk-critical)">Immediate</td></tr>
-            <tr><td>Insider fraud — access abuse</td><td class="tt-cell-no">No</td><td class="tt-cell-no">No</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-no">&#10007;</td><td class="tt-cell-no">&#10007;</td><td style="font-weight:600;color:var(--risk-critical)">6 hours</td></tr>
-            <tr><td>AI model poisoning — credit</td><td class="tt-cell-yes">Yes</td><td class="tt-cell-no">No</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-no">&#10007;</td><td class="tt-cell-yes">&#10003; Immediate</td><td style="font-weight:600;color:var(--risk-critical)">Immediate</td></tr>
+            <tr><td>Insider fraud &mdash; access abuse</td><td class="tt-cell-no">No</td><td class="tt-cell-no">No</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-no">&#10007;</td><td class="tt-cell-no">&#10007;</td><td style="font-weight:600;color:var(--risk-critical)">6 hours</td></tr>
+            <tr><td>AI model poisoning &mdash; credit</td><td class="tt-cell-yes">Yes</td><td class="tt-cell-no">No</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-no">&#10007;</td><td class="tt-cell-yes">&#10003; Immediate</td><td style="font-weight:600;color:var(--risk-critical)">Immediate</td></tr>
             <tr><td>Cloud misconfiguration</td><td class="tt-cell-dep">Depends</td><td class="tt-cell-dep">Depends</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-dep">If CII</td><td class="tt-cell-dep">If PII</td><td style="font-weight:600;color:var(--risk-critical)">6hr min</td></tr>
             <tr><td>DDoS on payment gateway</td><td class="tt-cell-no">No</td><td class="tt-cell-dep">Depends</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-yes">&#10003; 6hr</td><td class="tt-cell-dep">If CII</td><td class="tt-cell-no">&#10007;</td><td style="font-weight:600;color:var(--risk-critical)">6hr min</td></tr>
           </tbody></table>
@@ -393,27 +243,27 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       <div class="section-header"><h2>Blind spot register &amp; fabrication control</h2><p>Declared uncertainties. Every control affected by a blind spot carries its BS-ID.</p></div>
       <div class="card"><div class="card-title">Source truth tags</div>
         <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px">
-          <span><span class="tag tag-v">[V]</span> Verified — live-fetched primary source</span>
-          <span><span class="tag tag-vt">[VT]</span> Verified-Training — confirm before client use</span>
-          <span><span class="tag tag-i">[I]</span> Inferred — logical derivation</span>
-          <span><span class="tag tag-u">[U]</span> Unverified — placeholder only</span>
-          <span><span class="tag tag-fr">[FR]</span> Fabrication-Risk — do not use</span>
+          <span><span class="tag tag-v">[V]</span> Verified &mdash; live-fetched primary source</span>
+          <span><span class="tag tag-vt">[VT]</span> Verified-Training &mdash; confirm before client use</span>
+          <span><span class="tag tag-i">[I]</span> Inferred &mdash; logical derivation</span>
+          <span><span class="tag tag-u">[U]</span> Unverified &mdash; placeholder only</span>
+          <span><span class="tag tag-fr">[FR]</span> Fabrication-Risk &mdash; do not use</span>
           <span><span class="tag tag-bs">[BS-XX]</span> Blind spot governed</span>
         </div>
       </div>
       <div class="card"><div class="card-title">BS-01 to BS-08</div>
-        <div class="bs-row"><div class="bs-id">BS-01</div><div class="bs-body"><div class="bs-title">DPDP Rules not yet notified</div><div class="bs-desc"><span class="bs-impact">Impact:</span>DPDP controls inferred from Act only.</div><div class="bs-mitigation">Mitigation: Mark all DPDP Rule references [U]. Review when Rules are notified by MeitY.</div></div></div>
-        <div class="bs-row"><div class="bs-id">BS-02</div><div class="bs-body"><div class="bs-title">DAKSH portal field schema unknown</div><div class="bs-desc"><span class="bs-impact">Impact:</span>Reporting payload templates may not match live DAKSH form.</div><div class="bs-mitigation">Mitigation: Validate against live DAKSH portal before client submission.</div></div></div>
-        <div class="bs-row"><div class="bs-id">BS-03</div><div class="bs-body"><div class="bs-title">ReBIT assessment framework — version currency</div><div class="bs-desc"><span class="bs-impact">Impact:</span>May reference superseded criteria.</div><div class="bs-mitigation">Mitigation: Fetch latest from rebit.org.in before engagement.</div></div></div>
-        <div class="bs-row"><div class="bs-id">BS-04</div><div class="bs-body"><div class="bs-title">NCIIPC CII financial sector list not fully public</div><div class="bs-desc"><span class="bs-impact">Impact:</span>Cannot confirm formal CII designation.</div><div class="bs-mitigation">Mitigation: Treat all SCBs and NBFC-UL/TL as presumptively CII-designated.</div></div></div>
-        <div class="bs-row"><div class="bs-id">BS-05</div><div class="bs-body"><div class="bs-title">RBI circulars post-August 2025 may be missing</div><div class="bs-desc"><span class="bs-impact">Impact:</span>Controls may not reflect latest amendments.</div><div class="bs-mitigation">Mitigation: Run live fetch of rbi.org.in/notifications before every engagement.</div></div></div>
-        <div class="bs-row"><div class="bs-id">BS-06</div><div class="bs-body"><div class="bs-title">State cooperative banks — limited coverage</div><div class="bs-desc"><span class="bs-impact">Impact:</span>Cooperative bank IT governance rules not fully mapped.</div><div class="bs-mitigation">Mitigation: Exclude or add explicit caveat in engagement letter.</div></div></div>
-        <div class="bs-row"><div class="bs-id">BS-07</div><div class="bs-body"><div class="bs-title">Foreign bank branch compliance nuances</div><div class="bs-desc"><span class="bs-impact">Impact:</span>Branch-level circular specifics may differ from subsidiary rules.</div><div class="bs-mitigation">Mitigation: Flag all foreign bank controls for branch-level legal review.</div></div></div>
-        <div class="bs-row"><div class="bs-id">BS-08</div><div class="bs-body"><div class="bs-title">IFTAS SFMS security standards — version unknown</div><div class="bs-desc"><span class="bs-impact">Impact:</span>INFINET security specs may be outdated.</div><div class="bs-mitigation">Mitigation: Fetch current standards from iftas.org.in.</div></div></div>
+        <div class="bs-row"><div class="bs-id">BS-01</div><div class="bs-body"><div class="bs-title">DPDP Rules not yet notified</div><div class="bs-desc"><span class="bs-impact">Impact:</span> DPDP controls inferred from Act only.</div><div class="bs-mitigation">Mitigation: Mark all DPDP Rule references [U]. Review when Rules are notified by MeitY.</div></div></div>
+        <div class="bs-row"><div class="bs-id">BS-02</div><div class="bs-body"><div class="bs-title">DAKSH portal field schema unknown</div><div class="bs-desc"><span class="bs-impact">Impact:</span> Reporting payload templates may not match live DAKSH form.</div><div class="bs-mitigation">Mitigation: Validate against live DAKSH portal before client submission.</div></div></div>
+        <div class="bs-row"><div class="bs-id">BS-03</div><div class="bs-body"><div class="bs-title">ReBIT assessment framework &mdash; version currency</div><div class="bs-desc"><span class="bs-impact">Impact:</span> May reference superseded criteria.</div><div class="bs-mitigation">Mitigation: Fetch latest from rebit.org.in before engagement.</div></div></div>
+        <div class="bs-row"><div class="bs-id">BS-04</div><div class="bs-body"><div class="bs-title">NCIIPC CII financial sector list not fully public</div><div class="bs-desc"><span class="bs-impact">Impact:</span> Cannot confirm formal CII designation.</div><div class="bs-mitigation">Mitigation: Treat all SCBs and NBFC-UL/TL as presumptively CII-designated.</div></div></div>
+        <div class="bs-row"><div class="bs-id">BS-05</div><div class="bs-body"><div class="bs-title">RBI circulars post-August 2025 may be missing</div><div class="bs-desc"><span class="bs-impact">Impact:</span> Controls may not reflect latest amendments.</div><div class="bs-mitigation">Mitigation: Run live fetch of rbi.org.in/notifications before every engagement.</div></div></div>
+        <div class="bs-row"><div class="bs-id">BS-06</div><div class="bs-body"><div class="bs-title">State cooperative banks &mdash; limited coverage</div><div class="bs-desc"><span class="bs-impact">Impact:</span> Cooperative bank IT governance rules not fully mapped.</div><div class="bs-mitigation">Mitigation: Exclude or add explicit caveat in engagement letter.</div></div></div>
+        <div class="bs-row"><div class="bs-id">BS-07</div><div class="bs-body"><div class="bs-title">Foreign bank branch compliance nuances</div><div class="bs-desc"><span class="bs-impact">Impact:</span> Branch-level circular specifics may differ from subsidiary rules.</div><div class="bs-mitigation">Mitigation: Flag all foreign bank controls for branch-level legal review.</div></div></div>
+        <div class="bs-row"><div class="bs-id">BS-08</div><div class="bs-body"><div class="bs-title">IFTAS SFMS security standards &mdash; version unknown</div><div class="bs-desc"><span class="bs-impact">Impact:</span> INFINET security specs may be outdated.</div><div class="bs-mitigation">Mitigation: Fetch current standards from iftas.org.in.</div></div></div>
       </div>
-      <div class="card"><div class="card-title">Live fetch protocol — open and verify manually</div>
+      <div class="card"><div class="card-title">Live fetch protocol &mdash; open and verify manually</div>
         <div class="tbl-wrap" style="margin-top:0"><table><thead><tr><th>Fetch</th><th>URL</th><th>Purpose</th></tr></thead><tbody>
-          <tr><td class="mono">FETCH-01</td><td><a href="https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx" target="_blank" style="color:var(--accent);font-size:11px">rbi.org.in — Master Directions</a></td><td style="font-size:11px">RBI IT Governance MD current version</td></tr>
+          <tr><td class="mono">FETCH-01</td><td><a href="https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx" target="_blank" style="color:var(--accent);font-size:11px">rbi.org.in &mdash; Master Directions</a></td><td style="font-size:11px">RBI IT Governance MD current version</td></tr>
           <tr><td class="mono">FETCH-02</td><td><a href="https://www.cert-in.org.in/" target="_blank" style="color:var(--accent);font-size:11px">cert-in.org.in</a></td><td style="font-size:11px">CERT-In Directions &amp; empanelled auditor list</td></tr>
           <tr><td class="mono">FETCH-03</td><td><a href="https://www.meity.gov.in/" target="_blank" style="color:var(--accent);font-size:11px">meity.gov.in</a></td><td style="font-size:11px">DPDP Rules notification status</td></tr>
           <tr><td class="mono">FETCH-04</td><td><a href="https://rebit.org.in/" target="_blank" style="color:var(--accent);font-size:11px">rebit.org.in</a></td><td style="font-size:11px">ReBIT cybersecurity framework version</td></tr>
@@ -426,7 +276,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
     <!-- TAB 5: DOSSIER -->
     <div class="tab-panel" id="tab-dossier">
       <div class="section-header">
-        <h2>Regulatory dossier — live fetch engine</h2>
+        <h2>Regulatory dossier &mdash; live fetch engine</h2>
         <p>Run all 6 regulatory fetches server-side. Results stored in Supabase dossier_log. Controls with codex refs older than the last fetch are flagged [DRIFT-RISK].</p>
       </div>
       <div class="card">
@@ -441,16 +291,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       <div id="dossier-results" style="display:none">
         <div class="tbl-wrap" style="margin-top:16px">
           <table>
-            <thead>
-              <tr>
-                <th>Fetch ID</th>
-                <th>Source</th>
-                <th>Status</th>
-                <th>Amendment?</th>
-                <th>Summary</th>
-                <th>Fetched at</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Fetch ID</th><th>Source</th><th>Status</th><th>Amendment?</th><th>Summary</th><th>Fetched at</th></tr></thead>
             <tbody id="dossier-tbody"></tbody>
           </table>
         </div>
@@ -468,30 +309,173 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
       </div>
     </div>
 
-    <!-- TAB 6: EXPORT -->
+
+    <!-- TAB 6: DAKSH PAYLOAD GENERATOR -->
+    <div class="tab-panel" id="tab-daksh">
+      <div class="section-header">
+        <h2>RBI DAKSH incident payload generator</h2>
+        <p>Generate a pre-filled DAKSH incident report. Review all fields before submission. [BS-02] — validate against live DAKSH portal field schema before use.</p>
+      </div>
+
+      <div id="dk-bs02-banner" style="padding:10px 14px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;font-size:12px;color:#92400E;margin-bottom:14px">
+        &#9888; <strong>[BS-02] DRAFT TOOL:</strong> The DAKSH portal field schema has not been independently verified. All generated field names and values must be validated against the live portal at daksh.rbi.org.in before submission. This payload is a first-draft audit aid, not a confirmed submission format.
+      </div>
+
+      <div class="card">
+        <div class="card-title">Incident details</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Incident reference: <span id="dk-ref-display" style="font-family:var(--mono);color:var(--navy);font-weight:600">will be auto-generated</span></div>
+        <div class="form-grid">
+          <div class="form-group span2"><label for="dk-incident">Incident description</label><textarea id="dk-incident" placeholder="e.g. Ransomware detected on CBS production server — Finacle database encrypted, transaction processing halted"></textarea></div>
+          <div class="form-group"><label for="dk-severity">Severity</label>
+            <select id="dk-severity">
+              <option value="Sev-1">Sev-1 — Critical (CBS/payment system down)</option>
+              <option value="Sev-2">Sev-2 — High (significant impact, partial degradation)</option>
+              <option value="Sev-3">Sev-3 — Medium (limited impact, workaround available)</option>
+            </select>
+          </div>
+          <div class="form-group"><label for="dk-detected">Detection date/time</label>
+            <input type="datetime-local" id="dk-detected">
+          </div>
+          <div class="form-group"><label for="dk-pii">PII involved?</label>
+            <select id="dk-pii"><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select>
+          </div>
+          <div class="form-group"><label for="dk-cii">CII asset involved?</label>
+            <select id="dk-cii"><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown / presumptive (BS-04)</option></select>
+          </div>
+          <div class="form-group"><label for="dk-financial">Financial system involved?</label>
+            <select id="dk-financial"><option value="yes">Yes</option><option value="no">No</option></select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="dk-generate-btn" onclick="generateDakshPayload()">Generate DAKSH payload</button>
+          <button class="btn btn-secondary" onclick="loadDakshHistory()">Load history</button>
+        </div>
+      </div>
+
+      <div class="ai-spinner" id="dk-spinner"><div class="spinner"></div> Generating DAKSH payload...</div>
+
+      <div id="dk-output-wrap" style="display:none">
+
+        <div id="dk-bs02-warning" style="padding:10px 14px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;font-size:12px;color:#92400E;margin-bottom:14px"></div>
+
+        <div class="card">
+          <div class="card-title">1. Entity details</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Incident reference</label><div id="dk-f-ref" style="font-family:var(--mono);font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>Entity</label><div id="dk-f-entity" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>RBI registration no. <span style="color:var(--risk-critical)">*fill before submission</span></label><input type="text" id="dk-f-rbi-reg"></div>
+            <div class="form-group"><label>CERT-In empanelled</label><div id="dk-f-certin" style="font-size:13px;padding:8px 0"></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">2. Incident classification</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Incident type</label><div id="dk-f-type" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>Severity</label><div id="dk-f-severity" style="font-size:13px;font-weight:600;color:var(--risk-critical);padding:8px 0"></div></div>
+            <div class="form-group"><label>Attack vector</label><div id="dk-f-vector" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>Systems affected</label><div id="dk-f-systems" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group span2"><label>Description</label><div id="dk-f-desc" style="font-size:13px;padding:8px 0"></div></div>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:#FECACA">
+          <div class="card-title" style="color:var(--risk-critical)">3. Timeline &amp; SLA <span style="font-size:11px;font-weight:400">[CRITICAL — SLA clock running]</span></div>
+          <div class="form-grid">
+            <div class="form-group"><label>Detected at</label><div id="dk-f-detected" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>Reported at</label><div id="dk-f-reported" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label style="color:var(--risk-critical)">SLA deadline</label><div id="dk-f-sla-deadline" style="font-size:13px;font-weight:600;color:var(--risk-critical);padding:8px 0"></div></div>
+            <div class="form-group"><label>RBI DAKSH SLA</label><div id="dk-f-rbi-sla" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>CERT-In SLA</label><div id="dk-f-certin-sla" style="font-size:13px;padding:8px 0"></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">4. Impact assessment</div>
+          <div class="form-grid">
+            <div class="form-group"><label>PII involved</label><div id="dk-f-pii" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>PII records affected</label><div id="dk-f-pii-count" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>CII involved</label><div id="dk-f-cii" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>Financial system</label><div id="dk-f-financial" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group span2"><label>Estimated financial impact</label><div id="dk-f-fin-impact" style="font-size:13px;padding:8px 0"></div></div>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:#FECACA">
+          <div class="card-title" style="color:var(--risk-critical)">5. Regulatory reporting obligations</div>
+          <div class="form-grid">
+            <div class="form-group"><label>RBI DAKSH</label><div id="dk-f-rbi-sla" style="font-size:13px;font-weight:600;color:var(--risk-critical);padding:8px 0">Required — 6 hours</div></div>
+            <div class="form-group"><label>CERT-In</label><div id="dk-f-certin-sla" style="font-size:13px;font-weight:600;color:var(--risk-critical);padding:8px 0">Required — 6 hours</div></div>
+            <div class="form-group"><label>NCIIPC</label><div id="dk-f-nciipc" style="font-size:13px;padding:8px 0"></div></div>
+            <div class="form-group"><label>DPDP Board</label><div id="dk-f-dpdp" style="font-size:13px;padding:8px 0"></div></div>
+          </div>
+          <div id="dk-bs-declarations" style="font-size:12px;color:#92400E;margin-top:8px;padding:10px;background:#FEF3C7;border-radius:4px"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">6. Containment &amp; response</div>
+          <div class="form-group" style="margin-bottom:10px"><label>Containment status</label><div id="dk-f-containment" style="font-size:13px;padding:8px 0"></div></div>
+          <div class="form-group" style="margin-bottom:10px"><label>Containment actions taken</label><div id="dk-f-actions" style="font-size:13px;padding:8px 0;white-space:pre-wrap"></div></div>
+          <div class="form-group" style="margin-bottom:10px"><label>Root cause (preliminary)</label><div id="dk-f-rootcause" style="font-size:13px;padding:8px 0"></div></div>
+          <div class="form-group"><label>Attack indicators (IOCs)</label><div id="dk-f-iocs" style="font-size:13px;padding:8px 0"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">7. Evidence &amp; escalation</div>
+          <div class="form-group" style="margin-bottom:10px"><label>Evidence artifacts</label><div id="dk-f-evidence" style="font-size:13px;padding:8px 0;white-space:pre-wrap"></div></div>
+          <div class="form-group" style="margin-bottom:10px"><label>Escalation path</label><div id="dk-f-escalation" style="font-size:13px;padding:8px 0"></div></div>
+          <div class="form-grid">
+            <div class="form-group"><label>Nodal officer <span style="color:var(--risk-critical)">*fill before submission</span></label><input type="text" id="dk-f-nodal"></div>
+            <div class="form-group"><label>Nodal officer contact <span style="color:var(--risk-critical)">*fill</span></label><input type="text" id="dk-f-nodal-contact"></div>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:#FDE68A">
+          <div class="card-title" style="color:#92400E">8. Pre-submission checklist [BS-02]</div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">All items must be checked before submission to DAKSH portal.</p>
+          <div id="dk-checklist-items"></div>
+        </div>
+
+        <div id="dk-raw-output" style="display:none;background:#F0F4FF;border:1px solid #BFD0FE;border-radius:6px;padding:14px;font-size:12px;white-space:pre-wrap;margin-top:14px"></div>
+
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn btn-primary" id="dk-pdf-btn" onclick="exportDakshPDF()">Download PDF</button>
+          <button class="btn btn-secondary" onclick="generateDakshPayload()">Regenerate</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">Payload history</div>
+        <div class="tbl-wrap" style="margin-top:0">
+          <table>
+            <thead><tr><th>Reference</th><th>Incident</th><th>Severity</th><th>PDF</th><th>Generated</th><th></th></tr></thead>
+            <tbody id="dk-history-tbody"><tr><td colspan="6" style="color:var(--text-muted);font-size:12px">Click Load history to view</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 7: EXPORT -->
     <div class="tab-panel" id="tab-export">
       <div class="section-header"><h2>Export &amp; backup</h2><p>Download formatted RCM workbook or JSON backup. Excel export includes 4 sheets: RCM Summary, Control Matrix, Fieldwork Pack, Dossier Status.</p></div>
-
       <div class="export-card">
         <div class="export-info">
           <h3>&#128196; RCM Excel workbook</h3>
-          <p>4-sheet formatted workbook — colour-coded by risk and source truth status. RBI inspection ready.</p>
-          <p style="font-size:11px;color:var(--text-muted);margin-top:4px">Sheets: RCM Summary · Control Matrix · Fieldwork Pack (IIA 2310) · Dossier Status</p>
+          <p>4-sheet formatted workbook &mdash; colour-coded by risk and source truth status. RBI inspection ready.</p>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:4px">Sheets: RCM Summary &middot; Control Matrix &middot; Fieldwork Pack (IIA 2310) &middot; Dossier Status</p>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
           <button class="btn btn-primary" id="excel-btn" onclick="exportExcel()">Download RCM (.xlsx)</button>
           <span id="excel-status" style="font-size:11px;color:var(--text-muted)"></span>
         </div>
       </div>
-
       <div class="export-card">
         <div class="export-info">
           <h3>&#128190; Full framework backup (JSON)</h3>
-          <p>All controls with parsed JSON — use to migrate to future versions or restore session.</p>
+          <p>All controls with parsed JSON &mdash; use to migrate to future versions or restore session.</p>
         </div>
         <button class="btn btn-secondary" onclick="exportJSON()">Download JSON</button>
       </div>
-
       <div class="card"><div class="card-title">Session statistics</div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:8px">
           <div style="text-align:center"><div style="font-size:28px;font-weight:700;color:var(--accent)" id="stat-controls">0</div><div style="font-size:12px;color:var(--text-muted)">Controls</div></div>
@@ -508,7 +492,7 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
 <!-- CHECKLIST MODAL -->
 <div id="checklist-modal">
   <div class="modal-box">
-    <div class="modal-title">Self-audit checklist — AI-PCRAF v2.0</div>
+    <div class="modal-title">Self-audit checklist &mdash; AI-PCRAF v2.0</div>
     <div id="checklist-items"></div>
     <div class="btn-row" style="margin-top:16px">
       <button class="btn btn-primary" onclick="closeChecklist()">Done</button>
@@ -519,910 +503,17 @@ td.wrap{white-space:normal;max-width:200px;word-break:break-word}
 
 <div id="toast"></div>
 
-<script>
-// ── SUPABASE INIT ──────────────────────────────────────────────────────────
-// Config is fetched from /api/config at runtime — no secrets in source code
-// Security is enforced by Supabase Row Level Security on all tables
-var sb          = null;
-var currentUser = null;
-var controls    = [];
-var currentEntityId = null;
+<!-- JS MODULES — load order matters: config first, api+auth+ui next, feature modules last -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/entity.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/truthtable.js"></script>
+<script src="js/dossier.js"></script>
+<script src="js/daksh.js"></script>
+<script src="js/export.js"></script>
 
-async function initSupabase() {
-  try {
-    var res = await fetch('/api/config');
-    if (!res.ok) throw new Error('Config endpoint returned ' + res.status);
-    var cfg = await res.json();
-    if (cfg.error) throw new Error(cfg.error);
-    sb = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnon);
-    // Check existing session after client is ready
-    var session = await sb.auth.getSession();
-    if (session.data && session.data.session && session.data.session.user) {
-      currentUser = session.data.session.user;
-      launchApp();
-    }
-  } catch(e) {
-    document.getElementById('auth-err').textContent = 'Configuration error: ' + e.message + '. Check Vercel environment variables.';
-  }
-}
-
-// Run on page load
-initSupabase();
-
-var CHECKLIST_ITEMS = [
-  'Scaffolding: all six scaffold layers addressed?',
-  'Codex: every control has a named Codex citation?',
-  'Reasoning: every control has a complete CoT reasoning chain?',
-  'OOP: every control is a complete CONTROL_OBJECT — no missing fields?',
-  'Truth Table: every incident class resolved?',
-  'Blind Spots: all affected controls carry their BS-ID?',
-  'Shape Up: negative-shape items actively removed?',
-  'Dossier: all six fetches attempted and recorded?',
-  'Source Truth: every claim carries a source truth status tag?',
-  'Fabrication: no FABRICATION-RISK items in client-facing output?'
-];
-var checklistState = Array(10).fill(false);
-
-// ── AUTH ───────────────────────────────────────────────────────────────────
-var authMode = 'login';
-function switchAuth(mode) {
-  authMode = mode;
-  document.getElementById('tab-login-btn').classList.toggle('active', mode === 'login');
-  document.getElementById('tab-signup-btn').classList.toggle('active', mode === 'signup');
-  document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Sign in' : 'Create account';
-  document.getElementById('auth-err').textContent = '';
-  document.getElementById('auth-msg').textContent = '';
-}
-
-async function submitAuth() {
-  var email    = document.getElementById('auth-email').value.trim();
-  var password = document.getElementById('auth-password').value;
-  var errEl    = document.getElementById('auth-err');
-  var msgEl    = document.getElementById('auth-msg');
-  errEl.textContent = '';
-  msgEl.textContent = '';
-  if (!email || !password) { errEl.textContent = 'Enter email and password'; return; }
-
-  document.getElementById('auth-submit-btn').disabled = true;
-  document.getElementById('auth-submit-btn').textContent = 'Please wait...';
-
-  var result;
-  if (authMode === 'signup') {
-    result = await sb.auth.signUp({ email: email, password: password });
-    if (!result.error) {
-      msgEl.textContent = 'Account created — check your email to confirm, then sign in.';
-      switchAuth('login');
-    }
-  } else {
-    result = await sb.auth.signInWithPassword({ email: email, password: password });
-    if (!result.error) {
-      currentUser = result.data.user;
-      launchApp();
-    }
-  }
-
-  if (result.error) { errEl.textContent = result.error.message; }
-  document.getElementById('auth-submit-btn').disabled = false;
-  document.getElementById('auth-submit-btn').textContent = authMode === 'login' ? 'Sign in' : 'Create account';
-}
-
-function launchApp() {
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('sidebar').style.display     = 'flex';
-  document.getElementById('main').style.display        = 'flex';
-  document.getElementById('user-email').textContent    = currentUser.email;
-  document.getElementById('db-status-pill').textContent = 'Supabase connected';
-  document.getElementById('db-status-pill').classList.remove('offline');
-  loadControlsFromDB();
-}
-
-async function signOut() {
-  await sb.auth.signOut();
-  currentUser = null;
-  controls    = [];
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('sidebar').style.display     = 'none';
-  document.getElementById('main').style.display        = 'none';
-  document.getElementById('auth-email').value    = '';
-  document.getElementById('auth-password').value = '';
-}
-
-// Session check handled in initSupabase()
-
-// ── API CALL — via Vercel serverless function ─────────────────────────────
-async function callAPI(prompt, maxTokens) {
-  maxTokens = maxTokens || 1200;
-  var res = await fetch('/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: prompt, maxTokens: maxTokens })
-  });
-  var data = await res.json();
-  if (!res.ok || data.error) throw new Error(data.error || 'Server error');
-  return data.content || '';
-}
-
-// ── TAB NAVIGATION ────────────────────────────────────────────────────────
-var TABS   = ['entity','controls','truth','blindspots','dossier','export'];
-var TITLES = { entity:'Entity Profiler', controls:'Control Matrix Builder', truth:'Truth Table — Incident Classifier', blindspots:'Blind Spot Register', dossier:'Regulatory Dossier — Live Fetch Engine', export:'Export & Backup' };
-function showTab(name) {
-  TABS.forEach(function(t) {
-    document.getElementById('tab-'+t).classList.toggle('active', t===name);
-    document.getElementById('nav-'+t).classList.toggle('active', t===name);
-  });
-  document.getElementById('topbar-title').textContent = TITLES[name];
-  if (name === 'export')   updateStats();
-  if (name === 'controls') loadControlsFromDB();
-}
-
-// ── TOAST ─────────────────────────────────────────────────────────────────
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function() { t.classList.remove('show'); }, 2800);
-}
-
-// ── CHECKLIST ─────────────────────────────────────────────────────────────
-function openChecklist() {
-  var wrap = document.getElementById('checklist-items');
-  wrap.innerHTML = CHECKLIST_ITEMS.map(function(item, i) {
-    return '<div class="checklist-item">' +
-      '<input type="checkbox" id="cl-' + i + '" ' + (checklistState[i] ? 'checked' : '') + ' onchange="toggleCheck(' + i + ')">' +
-      '<label for="cl-' + i + '" class="' + (checklistState[i] ? 'done' : '') + '">' + item + '</label></div>';
-  }).join('');
-  document.getElementById('checklist-modal').classList.add('open');
-}
-function toggleCheck(i) {
-  checklistState[i] = !checklistState[i];
-  var lbl = document.querySelector('label[for="cl-' + i + '"]');
-  if (lbl) lbl.classList.toggle('done', checklistState[i]);
-}
-function closeChecklist() { document.getElementById('checklist-modal').classList.remove('open'); }
-function resetChecklist() { checklistState = Array(10).fill(false); openChecklist(); }
-
-// ── ENTITY PROFILER ───────────────────────────────────────────────────────
-async function generateEntityProfile() {
-  var name   = document.getElementById('ep-name').value.trim();
-  var type   = document.getElementById('ep-type').value;
-  var cbs    = document.getElementById('ep-cbs').value.trim();
-  var cloud  = document.getElementById('ep-cloud').value;
-  var assets = document.getElementById('ep-assets').value.trim();
-  var period = document.getElementById('ep-period').value.trim();
-  var risks  = document.getElementById('ep-risks').value.trim();
-  if (!name || !type) { showToast('Enter entity name and type'); return; }
-
-  document.getElementById('ep-spinner').classList.add('visible');
-  document.getElementById('ep-output').classList.remove('visible');
-  document.getElementById('ep-generate-btn').disabled = true;
-
-  var prompt = 'You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v2.0 for Indian BFSI IT Audit.\n\n' +
-    'Entity: ' + name + ' | Type: ' + type + ' | CBS: ' + (cbs||'Unknown') + ' | Cloud: ' + cloud +
-    ' | Assets: ' + (assets||'Not specified') + ' | Period: ' + (period||'Not specified') +
-    ' | Risk areas: ' + (risks||'Not specified') + '\n\n' +
-    'Produce Phase 1 Entity Risk Profile:\n' +
-    '1. Tier classification and RBI IT Gov MD 2023 obligations\n' +
-    '2. Top 5 assurance domains (AD-01 to AD-07) with rationale\n' +
-    '3. Tier-drift alert matrix\n' +
-    '4. CII designation assessment (BS-04 if uncertain)\n' +
-    '5. Recommended audit focus areas\n\n' +
-    'Tag citations [VT]. Flag DPDP items [BS-01].';
-
-  try {
-    var result = await callAPI(prompt, 1000);
-    document.getElementById('ep-output').textContent = result;
-    document.getElementById('ep-output').classList.add('visible');
-    document.getElementById('header-block-entity').style.display = 'block';
-    document.getElementById('hb-tier').textContent = type;
-    document.getElementById('hb-date').textContent = new Date().toLocaleString('en-IN');
-    document.getElementById('entity-badge-topbar').innerHTML = '<span class="tier-badge">' + type + '</span>';
-  } catch(e) {
-    document.getElementById('ep-output').textContent = 'Error: ' + e.message;
-    document.getElementById('ep-output').classList.add('visible');
-  } finally {
-    document.getElementById('ep-spinner').classList.remove('visible');
-    document.getElementById('ep-generate-btn').disabled = false;
-  }
-}
-
-async function saveEntityToDB() {
-  if (!currentUser) return;
-  var payload = {
-    user_id: currentUser.id,
-    name:    document.getElementById('ep-name').value.trim(),
-    type:    document.getElementById('ep-type').value,
-    cbs:     document.getElementById('ep-cbs').value.trim(),
-    cloud:   document.getElementById('ep-cloud').value,
-    assets:  document.getElementById('ep-assets').value.trim(),
-    period:  document.getElementById('ep-period').value.trim(),
-    risks:   document.getElementById('ep-risks').value.trim(),
-    profile_ai: document.getElementById('ep-output').textContent || null
-  };
-  if (!payload.name || !payload.type) { showToast('Enter entity name and type first'); return; }
-  var res = await sb.from('entities').insert(payload).select();
-  if (res.error) { showToast('Save failed: ' + res.error.message); return; }
-  currentEntityId = res.data[0].id;
-  showToast('Entity saved to Supabase');
-}
-
-async function loadEntitiesFromDB() {
-  if (!currentUser) return;
-  var res = await sb.from('entities').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1);
-  if (res.error || !res.data || !res.data.length) { showToast('No saved entity found'); return; }
-  var e = res.data[0];
-  currentEntityId = e.id;
-  document.getElementById('ep-name').value   = e.name   || '';
-  document.getElementById('ep-type').value   = e.type   || '';
-  document.getElementById('ep-cbs').value    = e.cbs    || '';
-  document.getElementById('ep-cloud').value  = e.cloud  || '';
-  document.getElementById('ep-assets').value = e.assets || '';
-  document.getElementById('ep-period').value = e.period || '';
-  document.getElementById('ep-risks').value  = e.risks  || '';
-  if (e.profile_ai) {
-    document.getElementById('ep-output').textContent = e.profile_ai;
-    document.getElementById('ep-output').classList.add('visible');
-  }
-  document.getElementById('entity-badge-topbar').innerHTML = '<span class="tier-badge">' + e.type + '</span>';
-  showToast('Entity loaded from Supabase');
-}
-
-// ── CONTROL MATRIX ────────────────────────────────────────────────────────
-function domainSeq(ctrlDomain) {
-  // Count existing controls for this domain from in-memory array (kept in sync with DB)
-  var existing = controls.filter(function(c) { return c.ctrl_domain === ctrlDomain; }).length;
-  return existing + 1;
-}
-
-async function generateControl() {
-  var domain     = document.getElementById('cm-domain').value;
-  var ctrlDomain = document.getElementById('cm-ctrl-domain').value;
-  var subsystem  = document.getElementById('cm-subsystem').value.trim();
-  var tier       = document.getElementById('cm-tier').value;
-  var focus      = document.getElementById('cm-focus').value.trim();
-  if (!focus) { showToast('Describe the control focus'); return; }
-
-  var seq       = domainSeq(ctrlDomain);
-  var controlId = 'CA-' + ctrlDomain + '-' + String(seq).padStart(2,'0');
-
-  document.getElementById('cm-spinner').classList.add('visible');
-  document.getElementById('cm-output').classList.remove('visible');
-
-  var entityCtx = (currentEntityId && document.getElementById('ep-name').value)
-    ? 'Entity: ' + document.getElementById('ep-name').value + ' (' + document.getElementById('ep-type').value + '). CBS: ' + (document.getElementById('ep-cbs').value || 'unknown') + '.'
-    : 'Tier: ' + tier + '.';
-
-  var prompt = 'You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v2.0 for Indian BFSI IT Audit.' +
-    ' Regulatory scope: RBI IT Gov MD 2023, CERT-In Directions 2022, DPDP Act 2023, NCIIPC, ReBIT, IFTAS.' +
-    ' Tag all citations [VT].\n\n' +
-    'CONTEXT\n' +
-    entityCtx + '\n' +
-    'Control ID: ' + controlId + '\n' +
-    'Assurance domain: ' + domain + '\n' +
-    'Control domain: ' + ctrlDomain + '\n' +
-    'Subsystem: ' + (subsystem || 'derive from control focus') + '\n' +
-    'Entity tier: ' + tier + '\n' +
-    'Control focus: ' + focus + '\n\n' +
-    'INSTRUCTION\n' +
-    'Return ONLY a raw JSON object. No markdown. No backticks. No explanation before or after.\n' +
-    'The JSON must contain exactly these string fields:\n' +
-    'control_id, control_name, assurance_domain, subsystem, primary_codex_ref, secondary_codex_ref,' +
-    ' source_truth_status, risk_description, risk_rating, inherent_risk, residual_risk,' +
-    ' control_type, control_mode, testing_frequency, ai_testing_procedure, manual_procedure,' +
-    ' evidence_artifacts, drift_indicator, drift_threshold, reporting_sla,' +
-    ' fabrication_flag, blind_spot_note,' +
-    ' cot_trigger, cot_codex, cot_tier, cot_design, cot_evidence, cot_failure,' +
-    ' fieldwork_test_steps, sample_size, evidence_request_list\n' +
-    'And these non-string fields:\n' +
-    ' tier_applicability (array of strings), reportable_to (array of strings), blind_spot_flag (boolean)\n\n' +
-    'risk_rating must be one of: Critical, High, Medium, Low\n' +
-    'control_type must be one of: Preventive, Detective, Corrective\n' +
-    'control_mode must be one of: Automated, Manual, Hybrid\n' +
-    'source_truth_status must be: VERIFIED-TRAINING\n' +
-    'fabrication_flag must be: VT\n' +
-    'Start your response with { and end with }';
-
-  try {
-    // Auto-retry once on parse failure — Groq occasionally adds preamble on first call
-    var p = null;
-    var lastRaw = '';
-    for (var attempt = 1; attempt <= 2; attempt++) {
-      var raw = await callAPI(prompt, 1200);
-      lastRaw = raw;
-      var firstBrace = raw.indexOf('{');
-      var lastBrace  = raw.lastIndexOf('}');
-      var clean = (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace)
-        ? raw.substring(firstBrace, lastBrace + 1)
-        : raw.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
-      try { p = JSON.parse(clean); break; }
-      catch(pe) {
-        if (attempt === 2) {
-          document.getElementById('cm-output').textContent = '[JSON parse error after 2 attempts]\n\n' + raw;
-          document.getElementById('cm-output').classList.add('visible');
-          return;
-        }
-        // Brief pause before retry
-        await new Promise(function(r){ setTimeout(r, 800); });
-      }
-    }
-
-    var lines = [
-      'CONTROL_OBJECT  ' + p.control_id,
-      '─────────────────────────────────────────────────',
-      'Name            ' + p.control_name,
-      'Domain          ' + p.assurance_domain,
-      'Subsystem       ' + p.subsystem,
-      'Tier            ' + (p.tier_applicability||[]).join(', '),
-      '',
-      'Primary ref     ' + p.primary_codex_ref,
-      'Secondary ref   ' + p.secondary_codex_ref,
-      'Source truth    [' + p.source_truth_status + ']',
-      '',
-      'Risk            ' + p.risk_description,
-      'Risk rating     ' + p.risk_rating,
-      'Inherent risk   ' + p.inherent_risk,
-      'Residual risk   ' + p.residual_risk,
-      '',
-      'Control type    ' + p.control_type,
-      'Control mode    ' + p.control_mode,
-      'Frequency       ' + p.testing_frequency,
-      'AI procedure    ' + p.ai_testing_procedure,
-      'Manual proc.    ' + p.manual_procedure,
-      '',
-      'Evidence        ' + p.evidence_artifacts,
-      'Drift indicator ' + p.drift_indicator,
-      'Drift threshold ' + p.drift_threshold,
-      '',
-      'Reportable to   ' + (p.reportable_to||[]).join(', '),
-      'Reporting SLA   ' + p.reporting_sla,
-      'Blind spot      ' + (p.blind_spot_flag ? p.blind_spot_note : 'None'),
-      '',
-      'COT REASONING',
-      '─────────────────────────────────────────────────',
-      p.cot_trigger, p.cot_codex, p.cot_tier, p.cot_design, p.cot_evidence, p.cot_failure,
-      '',
-      'FIELDWORK PACK  (IIA Standard 2310)',
-      '─────────────────────────────────────────────────',
-      'Test steps:     ' + p.fieldwork_test_steps,
-      'Sample size:    ' + p.sample_size,
-      'Evidence req:   ' + p.evidence_request_list
-    ];
-    document.getElementById('cm-output').textContent = lines.join('\n');
-    document.getElementById('cm-output').classList.add('visible');
-
-    // Save to Supabase
-    var dbRow = {
-      user_id: currentUser.id,
-      entity_id: currentEntityId || null,
-      control_id: p.control_id,
-      ctrl_domain: ctrlDomain,
-      ad_domain: p.assurance_domain,
-      subsystem: p.subsystem,
-      tier: tier,
-      focus: focus.substring(0,80),
-      control_name: p.control_name,
-      primary_codex_ref: p.primary_codex_ref,
-      secondary_codex_ref: p.secondary_codex_ref,
-      source_truth_status: p.source_truth_status,
-      risk_description: p.risk_description,
-      risk_rating: p.risk_rating,
-      inherent_risk: p.inherent_risk,
-      residual_risk: p.residual_risk,
-      control_type: p.control_type,
-      control_mode: p.control_mode,
-      testing_frequency: p.testing_frequency,
-      ai_testing_procedure: p.ai_testing_procedure,
-      manual_procedure: p.manual_procedure,
-      evidence_artifacts: p.evidence_artifacts,
-      drift_indicator: p.drift_indicator,
-      drift_threshold: p.drift_threshold,
-      reportable_to: (p.reportable_to||[]).join(', '),
-      reporting_sla: p.reporting_sla,
-      fabrication_flag: p.fabrication_flag,
-      blind_spot_flag: p.blind_spot_flag,
-      blind_spot_note: p.blind_spot_note,
-      cot_trigger: p.cot_trigger,
-      cot_codex: p.cot_codex,
-      cot_tier: p.cot_tier,
-      cot_design: p.cot_design,
-      cot_evidence: p.cot_evidence,
-      cot_failure: p.cot_failure,
-      fieldwork_test_steps: p.fieldwork_test_steps,
-      sample_size: p.sample_size,
-      evidence_request_list: p.evidence_request_list,
-      raw_output: lines.join('\n')
-    };
-    var dbRes = await sb.from('controls').insert(dbRow);
-    if (dbRes.error) {
-      showToast('DB save failed: ' + dbRes.error.message);
-      console.error('DB insert error:', dbRes.error);
-    } else {
-      // Reload from Supabase so table always reflects true DB state
-      await loadControlsFromDB();
-      showToast(controlId + ' saved — ' + controls.length + ' total controls');
-      // Clear only focus field — keep domain selectors for next control
-      document.getElementById('cm-focus').value = '';
-      document.getElementById('cm-subsystem').value = '';
-      // Show next-control prompt in output box
-      var out = document.getElementById('cm-output');
-      out.textContent = out.textContent + '\n\n─────────────────────────────────────────────────\n' +
-        controlId + ' saved to Supabase successfully.\n' +
-        'Table updated below. To generate the next control:\n' +
-        '1. Change domain selectors if needed\n' +
-        '2. Enter new subsystem and control focus\n' +
-        '3. Click Generate control object';
-      // Scroll table into view
-      var wrap = document.getElementById('control-table-wrap');
-      if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  } catch(e) {
-    document.getElementById('cm-output').textContent = 'Error: ' + e.message;
-    document.getElementById('cm-output').classList.add('visible');
-  } finally {
-    document.getElementById('cm-spinner').classList.remove('visible');
-  }
-}
-
-async function loadControlsFromDB() {
-  if (!currentUser) return;
-  var res = await sb.from('controls').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
-  if (res.error) { console.error('Load controls error:', res.error); return; }
-  controls = (res.data || []).map(function(r) {
-    return {
-      id: r.control_id, ctrl_domain: r.ctrl_domain, ad_domain: r.ad_domain,
-      subsystem: r.subsystem, tier: r.tier, risk_rating: r.risk_rating,
-      codex_ref: r.primary_codex_ref, ctrl_type: r.control_type,
-      evidence: r.evidence_artifacts, sla: r.reporting_sla,
-      source_status: r.source_truth_status === 'VERIFIED-TRAINING' ? 'VT' : r.source_truth_status === 'INFERRED' ? 'I' : 'U',
-      created: r.created_at
-    };
-  });
-  renderControlTable();
-  updateStats();
-}
-
-function renderControlTable() {
-  var tbody = document.getElementById('control-tbody');
-  document.getElementById('control-table-wrap').style.display = controls.length ? 'block' : 'none';
-  document.getElementById('ctrl-count').textContent = controls.length;
-  tbody.innerHTML = controls.map(function(c, i) {
-    return '<tr>' +
-      '<td class="mono">' + c.id + '</td>' +
-      '<td style="font-size:11px;white-space:nowrap">' + c.ad_domain + '</td>' +
-      '<td class="wrap">' + (c.subsystem||'—') + '</td>' +
-      '<td><span class="tier-badge" style="font-size:10px">' + c.tier + '</span></td>' +
-      '<td class="risk-' + (c.risk_rating||'').toLowerCase() + '">' + (c.risk_rating||'—') + '</td>' +
-      '<td class="wrap" style="font-size:11px">' + (c.codex_ref||'—') + '</td>' +
-      '<td style="font-size:11px">' + (c.ctrl_type||'—') + '</td>' +
-      '<td class="wrap" style="font-size:11px">' + (c.evidence||'—') + '</td>' +
-      '<td style="font-size:11px;white-space:nowrap">' + (c.sla||'—') + '</td>' +
-      '<td><span class="tag tag-' + (c.source_status||'u').toLowerCase() + '">[' + (c.source_status||'U') + ']</span></td>' +
-      '<td><button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteControl(' + i + ')">Remove</button></td>' +
-      '</tr>';
-  }).join('');
-}
-
-async function deleteControl(i) {
-  var ctrl = controls[i];
-  await sb.from('controls').delete().eq('user_id', currentUser.id).eq('control_id', ctrl.id);
-  controls.splice(i, 1);
-  renderControlTable();
-  showToast('Control removed');
-}
-async function clearControls() {
-  if (!confirm('Clear all controls for this user?')) return;
-  await sb.from('controls').delete().eq('user_id', currentUser.id);
-  controls = [];
-  renderControlTable();
-  showToast('Controls cleared');
-}
-
-// ── TRUTH TABLE ───────────────────────────────────────────────────────────
-async function runTruthTable() {
-  var incident  = document.getElementById('tt-incident').value.trim();
-  var pii       = document.getElementById('tt-pii').value;
-  var cii       = document.getElementById('tt-cii').value;
-  var financial = document.getElementById('tt-financial').value;
-  if (!incident) { showToast('Describe the incident'); return; }
-
-  var ttRows = [
-    { agency:'RBI DAKSH', reqClass:'tt-cell-yes', reqLabel:'&#10003; Required',
-      sla:'6 hours from detection', slaColor:'var(--risk-critical)', start:'Time of detection',
-      portal:'DAKSH portal [BS-02: validate field schema before submission]' },
-    { agency:'CERT-In', reqClass:'tt-cell-yes', reqLabel:'&#10003; Required',
-      sla:'6 hours from detection', slaColor:'var(--risk-critical)', start:'Time of detection',
-      portal:'cert-in.org.in — incident reporting form' },
-    { agency:'NCIIPC',
-      reqClass: cii==='yes' ? 'tt-cell-yes' : cii==='unknown' ? 'tt-cell-dep' : 'tt-cell-no',
-      reqLabel: cii==='yes' ? '&#10003; Required' : cii==='unknown' ? 'Depends — confirm CII status' : '&#10007; Not required',
-      sla:      cii==='yes' ? 'Immediate' : cii==='unknown' ? 'Pending CII confirmation' : '—',
-      slaColor: cii==='no' ? 'var(--text-muted)' : 'var(--risk-critical)',
-      start:    cii!=='no' ? 'Time of detection' : '—',
-      portal:   'nciipc.gov.in [BS-04: SCB and NBFC-UL/TL presumptive CII]' },
-    { agency:'DPDP Board',
-      reqClass: pii==='yes' ? 'tt-cell-yes' : pii==='unknown' ? 'tt-cell-dep' : 'tt-cell-no',
-      reqLabel: pii==='yes' ? '&#10003; Required' : pii==='unknown' ? 'Depends — confirm PII exposure' : '&#10007; Not required',
-      sla:      pii==='yes' ? 'Immediate' : pii==='unknown' ? 'Pending PII confirmation' : '—',
-      slaColor: pii==='no' ? 'var(--text-muted)' : 'var(--risk-critical)',
-      start:    pii!=='no' ? 'Time of breach discovery' : '—',
-      portal:   'MeitY/DPDP Board [BS-01: Rules not notified — schema unknown]' }
-  ];
-
-  document.getElementById('tt-tbody').innerHTML = ttRows.map(function(row) {
-    return '<tr><td style="font-weight:600">' + row.agency + '</td>' +
-      '<td class="' + row.reqClass + '">' + row.reqLabel + '</td>' +
-      '<td style="font-weight:600;color:' + row.slaColor + '">' + row.sla + '</td>' +
-      '<td style="font-size:12px">' + row.start + '</td>' +
-      '<td class="wrap" style="font-size:11px">' + row.portal + '</td></tr>';
-  }).join('');
-
-  var hasDeps = pii==='unknown' || cii==='unknown';
-  var govSLA  = (pii==='yes'||cii==='yes') ? 'Immediate' : hasDeps ? 'Immediate (worst-case — confirm dependencies)' : '6 hours';
-  document.getElementById('tt-hcd').textContent = 'Governing SLA (HCD rule): ' + govSLA + ' — all teams work to this clock.';
-  document.getElementById('tt-depends-note').style.display = hasDeps ? 'block' : 'none';
-  document.getElementById('tt-result').style.display = 'block';
-
-  document.getElementById('tt-spinner').classList.add('visible');
-  document.getElementById('tt-output').classList.remove('visible');
-
-  var prompt = 'AI-PCRAF v2.0 Incident Analysis.\n\n' +
-    'Incident: ' + incident + '\nPII: ' + pii + '\nCII: ' + cii + '\nFinancial: ' + financial + '\n\n' +
-    'Produce:\n1. Severity classification (Sev-1/2/3)\n' +
-    '2. Per-agency reporting obligations with SLA calculations — cite CERT-In Directions April 2022 and RBI IT Gov MD 2023 sections [VT]\n' +
-    '3. Immediate response steps (first 2 hours)\n4. Evidence preservation requirements\n' +
-    '5. Applicable blind spots (BS-01 to BS-08)\n' +
-    '6. De-duplication — single action satisfying multiple agencies\n\nTag citations [VT]. Flag DPDP [BS-01].';
-
-  try {
-    var result = await callAPI(prompt, 1000);
-    document.getElementById('tt-output').textContent = result;
-    document.getElementById('tt-output').classList.add('visible');
-    // Save incident to DB
-    if (currentUser) {
-      await sb.from('incidents').insert({
-        user_id: currentUser.id, entity_id: currentEntityId||null,
-        description: incident, pii: pii, cii: cii, financial: financial,
-        ai_analysis: result
-      });
-    }
-  } catch(e) {
-    document.getElementById('tt-output').textContent = 'Error: ' + e.message;
-    document.getElementById('tt-output').classList.add('visible');
-  } finally {
-    document.getElementById('tt-spinner').classList.remove('visible');
-  }
-}
-
-function resetTT() {
-  document.getElementById('tt-result').style.display = 'none';
-  document.getElementById('tt-output').classList.remove('visible');
-  document.getElementById('tt-output').textContent   = '';
-  document.getElementById('tt-incident').value       = '';
-}
-
-// ── EXPORT ────────────────────────────────────────────────────────────────
-function exportJSON() {
-  var data = { framework:'AI-PCRAF v2.0', exported:new Date().toISOString(), controls:controls };
-  var blob = new Blob([JSON.stringify(data,null,2)], { type:'application/json' });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'AI_PCRAF_export_' + new Date().toISOString().slice(0,10) + '.json';
-  a.click();
-  showToast('JSON exported');
-}
-async function exportExcel() {
-  var btn = document.getElementById('excel-btn');
-  var statusEl = document.getElementById('excel-status');
-  btn.disabled = true;
-  btn.textContent = 'Generating...';
-  statusEl.textContent = 'Building 4-sheet workbook...';
-
-  try {
-    // Load latest dossier from Supabase
-    var dossierData = [];
-    if (currentUser && sb) {
-      var dRes = await sb.from('dossier_log')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('fetched_at', { ascending: false })
-        .limit(60);
-      if (!dRes.error) dossierData = dRes.data || [];
-    }
-
-    // Load entity
-    var entityData = {};
-    if (currentUser && sb) {
-      var eRes = await sb.from('entities')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (!eRes.error && eRes.data && eRes.data.length) entityData = eRes.data[0];
-    }
-
-    // Load full controls with parsed JSON from Supabase
-    var fullControls = controls;
-    if (currentUser && sb) {
-      var cRes = await sb.from('controls')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: true });
-      if (!cRes.error && cRes.data && cRes.data.length) {
-        fullControls = cRes.data.map(function(r) {
-          return {
-            id:           r.control_id,
-            ctrl_domain:  r.ctrl_domain,
-            ad_domain:    r.ad_domain,
-            subsystem:    r.subsystem,
-            tier:         r.tier,
-            risk_rating:  r.risk_rating,
-            codex_ref:    r.primary_codex_ref,
-            ctrl_type:    r.control_type,
-            evidence:     r.evidence_artifacts,
-            sla:          r.reporting_sla,
-            source_status: r.source_truth_status === 'VERIFIED-TRAINING' ? 'VT' :
-                           r.source_truth_status === 'INFERRED' ? 'I' : 'U',
-            created:      r.created_at,
-            parsed: {
-              control_id:           r.control_id,
-              control_name:         r.control_name,
-              assurance_domain:     r.ad_domain,
-              subsystem:            r.subsystem,
-              tier_applicability:   [],
-              primary_codex_ref:    r.primary_codex_ref,
-              secondary_codex_ref:  r.secondary_codex_ref,
-              source_truth_status:  r.source_truth_status,
-              risk_description:     r.risk_description,
-              risk_rating:          r.risk_rating,
-              inherent_risk:        r.inherent_risk,
-              residual_risk:        r.residual_risk,
-              control_type:         r.control_type,
-              control_mode:         r.control_mode,
-              testing_frequency:    r.testing_frequency,
-              ai_testing_procedure: r.ai_testing_procedure,
-              manual_procedure:     r.manual_procedure,
-              evidence_artifacts:   r.evidence_artifacts,
-              drift_indicator:      r.drift_indicator,
-              drift_threshold:      r.drift_threshold,
-              reportable_to:        (r.reportable_to || '').split(',').map(function(s){return s.trim();}),
-              reporting_sla:        r.reporting_sla,
-              blind_spot_flag:      r.blind_spot_flag,
-              blind_spot_note:      r.blind_spot_note,
-              cot_trigger:          r.cot_trigger,
-              cot_codex:            r.cot_codex,
-              cot_tier:             r.cot_tier,
-              cot_design:           r.cot_design,
-              cot_evidence:         r.cot_evidence,
-              cot_failure:          r.cot_failure,
-              fieldwork_test_steps:  r.fieldwork_test_steps,
-              sample_size:           r.sample_size,
-              evidence_request_list: r.evidence_request_list
-            }
-          };
-        });
-      }
-    }
-
-    if (!fullControls.length) {
-      statusEl.textContent = '';
-      showToast('No controls found in database — generate controls first');
-      btn.disabled = false;
-      btn.textContent = 'Download RCM (.xlsx)';
-      return;
-    }
-
-    statusEl.textContent = 'Sending to export engine...';
-    var res = await fetch('/api/export-rcm', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entity:   entityData,
-        controls: fullControls,
-        dossier:  dossierData
-      })
-    });
-
-    if (!res.ok) {
-      var err = await res.json();
-      throw new Error(err.error || 'Export failed');
-    }
-
-    // Download the binary
-    var blob = await res.blob();
-    var entity_name = (entityData.name || '').replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
-    var filename = 'AI_PCRAF_RCM_' + (entity_name ? entity_name + '_' : '') +
-      new Date().toISOString().slice(0,10) + '.xlsx';
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    statusEl.textContent = fullControls.length + ' controls exported — ' + new Date().toLocaleTimeString('en-IN');
-    showToast('RCM Excel downloaded');
-
-  } catch(e) {
-    statusEl.textContent = 'Error: ' + e.message;
-    showToast('Export failed: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Download RCM (.xlsx)';
-  }
-}
-function updateStats() {
-  document.getElementById('stat-controls').textContent   = controls.length;
-  document.getElementById('stat-verified').textContent   = controls.filter(function(c){return c.source_status==='V'||c.source_status==='VT';}).length;
-  document.getElementById('stat-inferred').textContent   = controls.filter(function(c){return c.source_status==='I';}).length;
-  document.getElementById('stat-unverified').textContent = controls.filter(function(c){return c.source_status==='U'||c.source_status==='FR';}).length;
-}
-
-// ── DOSSIER — M3 LIVE FETCH ENGINE ───────────────────────────────────────
-var lastFetchResults = [];
-
-async function runAllFetches() {
-  if (!currentUser) return;
-  document.getElementById('dossier-run-btn').disabled = true;
-  document.getElementById('dossier-spinner').classList.add('visible');
-  document.getElementById('dossier-results').style.display = 'none';
-  document.getElementById('dossier-summary').textContent = '';
-
-  try {
-    var res = await fetch('/api/fetch-regulatory', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fetchIds: ['FETCH-01','FETCH-02','FETCH-03','FETCH-04','FETCH-05','FETCH-06'] })
-    });
-    var data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || 'Fetch endpoint error');
-
-    lastFetchResults = data.results || [];
-    var summary = data.summary || {};
-
-    // Save each result to Supabase dossier_log
-    var logRows = lastFetchResults.map(function(r) {
-      return {
-        user_id:            currentUser.id,
-        fetch_id:           r.id,
-        url:                r.url,
-        status:             r.status,
-        result_summary:     r.result_summary,
-        amendment_detected: r.amendment_detected,
-        amendment_note:     r.amendment_note || ''
-      };
-    });
-    await sb.from('dossier_log').insert(logRows);
-
-    // Render results table
-    renderDossierResults(lastFetchResults);
-
-    // Summary pill
-    document.getElementById('dossier-summary').textContent =
-      summary.fetched + '/' + summary.total + ' fetched  |  ' +
-      summary.failed + ' failed  |  ' +
-      summary.amendments_found + ' amendment signals';
-
-    // Check controls for drift
-    checkControlDrift(lastFetchResults);
-
-  } catch(e) {
-    document.getElementById('dossier-summary').textContent = 'Error: ' + e.message;
-  } finally {
-    document.getElementById('dossier-spinner').classList.remove('visible');
-    document.getElementById('dossier-run-btn').disabled = false;
-    document.getElementById('dossier-results').style.display = 'block';
-  }
-}
-
-function renderDossierResults(results) {
-  var tbody = document.getElementById('dossier-tbody');
-  tbody.innerHTML = results.map(function(r) {
-    var statusTag = r.status === 'FETCHED'
-      ? '<span class="tag tag-v">[V]</span>'
-      : '<span class="tag tag-fr">[FETCH-FAILED]</span>';
-    var amendTag = r.amendment_detected
-      ? '<span class="tag tag-i">[AMENDMENT]</span>'
-      : '<span style="color:var(--text-muted);font-size:11px">None</span>';
-    return '<tr>' +
-      '<td class="mono">' + r.id + '</td>' +
-      '<td style="font-size:11px;font-weight:600">' + r.label + '</td>' +
-      '<td>' + statusTag + '</td>' +
-      '<td>' + amendTag + '</td>' +
-      '<td class="wrap" style="font-size:11px">' + (r.result_summary || '—') + '</td>' +
-      '<td style="font-size:11px;white-space:nowrap">' + new Date().toLocaleString('en-IN') + '</td>' +
-      '</tr>';
-  }).join('');
-
-  // Amendment box
-  var amendments = results.filter(function(r) { return r.amendment_detected; });
-  var amendBox = document.getElementById('dossier-amendment-box');
-  if (amendments.length) {
-    amendBox.style.display = 'block';
-    amendBox.innerHTML = '<strong>&#9888; Amendment signals detected (' + amendments.length + '):</strong><br>' +
-      amendments.map(function(r) {
-        return '<br><strong>' + r.id + ':</strong> ' + r.amendment_note;
-      }).join('');
-  } else {
-    amendBox.style.display = 'none';
-  }
-}
-
-function checkControlDrift(fetchResults) {
-  var failedFetches = fetchResults.filter(function(r) { return r.status === 'FETCH-FAILED'; });
-  var amendmentFetches = fetchResults.filter(function(r) { return r.amendment_detected; });
-  var driftBox = document.getElementById('dossier-drift-box');
-
-  if (!controls.length) { driftBox.style.display = 'none'; return; }
-
-  var driftControls = [];
-
-  // Flag controls whose codex ref matches a source that returned amendment signal
-  controls.forEach(function(c) {
-    var ref = (c.codex_ref || '').toLowerCase();
-    var isDrift = false;
-    var reason = '';
-
-    if ((ref.includes('rbi') || ref.includes('md')) && amendmentFetches.find(function(f){ return f.id==='FETCH-01'; })) {
-      isDrift = true; reason = 'RBI MD amendment signal detected — re-verify citation';
-    }
-    if (ref.includes('cert-in') && amendmentFetches.find(function(f){ return f.id==='FETCH-02'; })) {
-      isDrift = true; reason = 'CERT-In amendment signal detected — re-verify citation';
-    }
-    if (ref.includes('dpdp') && amendmentFetches.find(function(f){ return f.id==='FETCH-03'; })) {
-      isDrift = true; reason = 'DPDP Rules signal detected — BS-01 may be resolvable, re-verify';
-    }
-    if (ref.includes('rebit') && amendmentFetches.find(function(f){ return f.id==='FETCH-04'; })) {
-      isDrift = true; reason = 'ReBIT version signal detected — re-verify citation';
-    }
-    // Failed fetches — mark as unverifiable
-    if ((ref.includes('nciipc')) && failedFetches.find(function(f){ return f.id==='FETCH-05'; })) {
-      isDrift = true; reason = 'NCIIPC fetch failed — citation unverifiable, BS-04 remains active';
-    }
-    if ((ref.includes('iftas') || ref.includes('sfms')) && failedFetches.find(function(f){ return f.id==='FETCH-06'; })) {
-      isDrift = true; reason = 'IFTAS fetch failed — citation unverifiable, BS-08 remains active';
-    }
-    if (isDrift) driftControls.push({ id: c.id, reason: reason });
-  });
-
-  if (driftControls.length) {
-    driftBox.style.display = 'block';
-    driftBox.innerHTML = '<strong>[DRIFT-RISK] ' + driftControls.length + ' control(s) require re-verification:</strong><br>' +
-      driftControls.map(function(d) {
-        return '<br><span class="mono">' + d.id + '</span> — ' + d.reason;
-      }).join('');
-  } else {
-    driftBox.style.display = 'none';
-  }
-}
-
-async function loadDossierHistory() {
-  if (!currentUser) return;
-  var res = await sb.from('dossier_log')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .order('fetched_at', { ascending: false })
-    .limit(60);
-  if (res.error || !res.data || !res.data.length) {
-    document.getElementById('dossier-history-tbody').innerHTML =
-      '<tr><td colspan="5" style="color:var(--text-muted);font-size:12px">No fetch history found — run fetches first</td></tr>';
-    return;
-  }
-  document.getElementById('dossier-history-tbody').innerHTML = res.data.map(function(r) {
-    var statusTag = r.status === 'FETCHED'
-      ? '<span class="tag tag-v">[V]</span>'
-      : '<span class="tag tag-fr">[FAILED]</span>';
-    var amendTag = r.amendment_detected
-      ? '<span class="tag tag-i">[AMEND]</span>'
-      : '—';
-    return '<tr>' +
-      '<td class="mono">' + r.fetch_id + '</td>' +
-      '<td>' + statusTag + '</td>' +
-      '<td>' + amendTag + '</td>' +
-      '<td class="wrap" style="font-size:11px">' + (r.result_summary || '—').substring(0, 120) + '</td>' +
-      '<td style="font-size:11px;white-space:nowrap">' + new Date(r.fetched_at).toLocaleString('en-IN') + '</td>' +
-      '</tr>';
-  }).join('');
-  showToast('Fetch history loaded — ' + res.data.length + ' records');
-}
-
-</script>
 </body>
 </html>
