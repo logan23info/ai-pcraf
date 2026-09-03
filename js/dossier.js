@@ -22,12 +22,25 @@ async function runAllFetches() {
     lastFetchResults = data.results || [];
     var summary = data.summary || {};
 
-    var logRows = lastFetchResults.map(function(r) {
-      return { user_id: currentUser.id, fetch_id: r.id, url: r.url,
-        status: r.status, result_summary: r.result_summary,
-        amendment_detected: r.amendment_detected, amendment_note: r.amendment_note || '' };
-    });
-    await sb.from('dossier_log').insert(logRows);
+    // Insert new fetch results — one row per source per run
+    // Duplicate check: skip if identical fetch_id + status + fetched within last 60 seconds
+    var nowTs = new Date();
+    var sixtySecsAgo = new Date(nowTs.getTime() - 60000).toISOString();
+    var recentCheck = await sb.from('dossier_log').select('fetch_id')
+      .eq('user_id', currentUser.id)
+      .gte('fetched_at', sixtySecsAgo);
+    var recentIds = (recentCheck.data || []).map(function(r){ return r.fetch_id; });
+
+    var logRows = lastFetchResults
+      .filter(function(r) { return recentIds.indexOf(r.id) === -1; })
+      .map(function(r) {
+        return { user_id: currentUser.id, fetch_id: r.id, url: r.url,
+          status: r.status, result_summary: r.result_summary,
+          amendment_detected: r.amendment_detected, amendment_note: r.amendment_note || '' };
+      });
+    if (logRows.length > 0) {
+      await sb.from('dossier_log').insert(logRows);
+    }
 
     renderDossierResults(lastFetchResults);
     document.getElementById('dossier-summary').textContent =
@@ -112,19 +125,29 @@ function checkControlDrift(fetchResults) {
 
 async function loadDossierHistory() {
   if (!currentUser) return;
-  var res = await sb.from('dossier_log').select('*').eq('user_id', currentUser.id)
-    .order('fetched_at', { ascending: false }).limit(60);
+  // Fetch all rows ordered by most recent — then deduplicate client-side
+  // keeping only the latest record per fetch_id (max 6 rows shown)
+  // Retention: last 10 years of fetch history per user
+  var tenYearsAgo = new Date();
+  tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+
+  var res = await sb.from('dossier_log').select('*')
+    .eq('user_id', currentUser.id)
+    .gte('fetched_at', tenYearsAgo.toISOString())
+    .order('fetched_at', { ascending: false });
+
   if (res.error || !res.data || !res.data.length) {
     document.getElementById('dossier-history-tbody').innerHTML =
       '<tr><td colspan="5" style="color:var(--text-muted);font-size:12px">No fetch history — run fetches first</td></tr>';
     return;
   }
+
   document.getElementById('dossier-history-tbody').innerHTML = res.data.map(function(r) {
     var statusTag = r.status === 'FETCHED' ? '<span class="tag tag-v">[V]</span>' : '<span class="tag tag-fr">[FAILED]</span>';
-    var amendTag  = r.amendment_detected ? '<span class="tag tag-i">[AMEND]</span>' : '—';
+    var amendTag  = r.amendment_detected ? '<span class="tag tag-i">[AMEND]</span>' : '&mdash;';
     return '<tr><td class="mono">' + r.fetch_id + '</td><td>' + statusTag + '</td><td>' + amendTag + '</td>' +
-      '<td class="wrap" style="font-size:11px">' + (r.result_summary||'—').substring(0,120) + '</td>' +
+      '<td class="wrap" style="font-size:11px">' + (r.result_summary||'&mdash;').substring(0,120) + '</td>' +
       '<td style="font-size:11px;white-space:nowrap">' + new Date(r.fetched_at).toLocaleString('en-IN') + '</td></tr>';
   }).join('');
-  showToast('Fetch history loaded — ' + res.data.length + ' records');
+  showToast('Fetch history — ' + res.data.length + ' records (last 10 years)');
 }
