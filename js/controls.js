@@ -74,7 +74,7 @@ async function generateControl() {
       try { p = JSON.parse(clean); break; }
       catch(pe) {
         if (attempt === 2) {
-          document.getElementById('cm-output').textContent = '[JSON parse error after 2 attempts]\n\n' + raw;
+          document.getElementById('cm-output').textContent = '[JSON parse error after 2 attempts] — raw output below:\n\n' + raw;
           document.getElementById('cm-output').classList.add('visible');
           return;
         }
@@ -125,7 +125,7 @@ async function generateControl() {
     ];
 
     var displayText = lines.join('\n');
-    document.getElementById('cm-output').textContent = displayText;
+    document.getElementById('cm-output').innerHTML = formatAIOutput(displayText);
     document.getElementById('cm-output').classList.add('visible');
 
     var dbRow = {
@@ -159,12 +159,9 @@ async function generateControl() {
       document.getElementById('cm-focus').value     = '';
       document.getElementById('cm-subsystem').value = '';
       var out = document.getElementById('cm-output');
-      out.textContent = out.textContent + '\n\n─────────────────────────────────────────────────\n' +
-        controlId + ' saved to Supabase successfully.\n' +
-        'To generate the next control:\n' +
-        '1. Change domain selectors if needed\n' +
-        '2. Enter new subsystem and control focus\n' +
-        '3. Click Generate control object';
+      var savedMsg = '\n\n' + '\n\n─────────────────────────────────────────────────\n' +
+        controlId + ' saved to Supabase successfully.\nTo generate the next control:\n1. Change domain selectors if needed\n2. Enter new subsystem and control focus\n3. Click Generate control object';
+      out.innerHTML = out.innerHTML + formatAIOutput(savedMsg);
       var wrap = document.getElementById('control-table-wrap');
       if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }

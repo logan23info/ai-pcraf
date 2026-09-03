@@ -61,7 +61,7 @@ async function generateEntityProfile() {
 
   try {
     var result = await callAPI(prompt, 2000);
-    document.getElementById('ep-output').textContent = result;
+    document.getElementById('ep-output').innerHTML = formatAIOutput(result);
     document.getElementById('ep-output').classList.add('visible');
     document.getElementById('header-block-entity').style.display = 'block';
     document.getElementById('hb-tier').textContent = type;
@@ -110,7 +110,7 @@ async function loadEntitiesFromDB() {
   document.getElementById('ep-period').value = e.period || '';
   document.getElementById('ep-risks').value  = e.risks  || '';
   if (e.profile_ai) {
-    document.getElementById('ep-output').textContent = e.profile_ai;
+    document.getElementById('ep-output').innerHTML = formatAIOutput(e.profile_ai);
     document.getElementById('ep-output').classList.add('visible');
   }
   document.getElementById('entity-badge-topbar').innerHTML = '<span class="tier-badge">' + e.type + '</span>';

@@ -82,7 +82,7 @@ async function runTruthTable() {
 
   try {
     var result = await callAPI(prompt, 1800);
-    document.getElementById('tt-output').textContent = result;
+    document.getElementById('tt-output').innerHTML = formatAIOutput(result);
     document.getElementById('tt-output').classList.add('visible');
     if (currentUser) {
       await sb.from('incidents').insert({
