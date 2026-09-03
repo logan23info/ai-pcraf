@@ -48,16 +48,40 @@ async function runTruthTable() {
   document.getElementById('tt-spinner').classList.add('visible');
   document.getElementById('tt-output').classList.remove('visible');
 
-  var prompt = 'AI-PCRAF v2.0 Incident Analysis.\n\n' +
-    'Incident: ' + incident + '\nPII: ' + pii + '\nCII: ' + cii + '\nFinancial: ' + financial + '\n\n' +
-    'Produce:\n1. Severity classification (Sev-1/2/3)\n' +
-    '2. Per-agency reporting obligations with SLA calculations — cite CERT-In Directions April 2022 and RBI IT Gov MD 2023 sections [VT]\n' +
-    '3. Immediate response steps (first 2 hours)\n4. Evidence preservation requirements\n' +
-    '5. Applicable blind spots (BS-01 to BS-08)\n' +
-    '6. De-duplication — single action satisfying multiple agencies\n\nTag citations [VT]. Flag DPDP [BS-01].';
+  var prompt = 'You are a Principal Cyber Risk & Compliance Consultant under AI-PCRAF v2.0 for Indian BFSI IT Audit.\n\n' +
+    'INCIDENT CONTEXT\n' +
+    'Description: ' + incident + '\n' +
+    'PII involved: ' + pii + '\n' +
+    'CII asset involved: ' + cii + '\n' +
+    'Financial system involved: ' + financial + '\n\n' +
+    'Produce a complete incident analysis with all 6 sections fully developed:\n\n' +
+    '1. SEVERITY CLASSIFICATION\n' +
+    '   - Classify as Sev-1 (critical — CBS/payment down), Sev-2 (significant), or Sev-3 (limited)\n' +
+    '   - State justification for the classification\n\n' +
+    '2. REGULATORY REPORTING OBLIGATIONS & SLA\n' +
+    '   - RBI DAKSH: always required — SLA is 6 hours from time of detection — cite RBI IT Gov MD 2023, Chapter/Section [VT]\n' +
+    '   - CERT-In: always required — SLA is 6 hours from time of detection — cite CERT-In Directions April 2022, Direction number [VT]\n' +
+    '   - NCIIPC: required if CII=yes or unknown — state Immediate SLA — cite NCIIPC guidelines [VT]\n' +
+    '   - DPDP Board: required if PII=yes — Immediate SLA — flag [BS-01] — cite DPDP Act 2023, Section [VT]\n' +
+    '   - For each agency: state exact SLA clock start, deadline, and reporting portal\n' +
+    '   - Incident reporting SLA is always 6 hours — never state 24 hours, 48 hours, or 72 hours\n\n' +
+    '3. IMMEDIATE RESPONSE STEPS (first 2 hours)\n' +
+    '   - Minimum 5 numbered steps in chronological order\n\n' +
+    '4. EVIDENCE PRESERVATION\n' +
+    '   - Specific artifacts to preserve: logs, SIEM alerts, network captures, access records\n' +
+    '   - Chain of custody requirement\n\n' +
+    '5. APPLICABLE BLIND SPOTS\n' +
+    '   - State which of BS-01 to BS-08 apply to this incident and why\n\n' +
+    '6. DE-DUPLICATION\n' +
+    '   - Where reporting obligations overlap, identify the single action that satisfies multiple agencies\n\n' +
+    'CITATION RULES (mandatory)\n' +
+    '- Every citation: document name + Chapter/Section number + [VT]\n' +
+    '- CERT-In Directions April 2022 — always include April 2022\n' +
+    '- Flag DPDP items [BS-01]\n' +
+    '- Do not reference GDPR, SOC 2, ISO 27001, or NIST';
 
   try {
-    var result = await callAPI(prompt, 1000);
+    var result = await callAPI(prompt, 1800);
     document.getElementById('tt-output').textContent = result;
     document.getElementById('tt-output').classList.add('visible');
     if (currentUser) {

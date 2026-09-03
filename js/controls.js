@@ -52,12 +52,20 @@ async function generateControl() {
     'control_mode must be one of: Automated, Manual, Hybrid\n' +
     'source_truth_status must be: VERIFIED-TRAINING\n' +
     'fabrication_flag must be: VT\n' +
+    'CITATION RULES (mandatory):\n' +
+    '- primary_codex_ref format: DocumentName, Chapter X, Section Y.Z [VT]\n' +
+    '- Example: RBI IT Gov MD 2023, Chapter 5, Section 5.3 [VT]\n' +
+    '- Example: CERT-In Directions April 2022, Direction 6(a) [VT]\n' +
+    '- Always include April 2022 when citing CERT-In Directions\n' +
+    '- reportable_to array must use exact tokens: RBI_DAKSH, CERT-In, NCIIPC, DPDP_Board\n' +
+    '- Incident reporting SLA is always 6 hours — never 24, 48, or 72 hours\n' +
+    '- Never cite GDPR, SOC 2, ISO 27001, or NIST as primary driver\n' +
     'Start your response with { and end with }';
 
   try {
     var p = null;
     for (var attempt = 1; attempt <= 2; attempt++) {
-      var raw = await callAPI(prompt, 1200);
+      var raw = await callAPI(prompt, 2500);
       var firstBrace = raw.indexOf('{');
       var lastBrace  = raw.lastIndexOf('}');
       var clean = (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace)
